@@ -3481,12 +3481,28 @@ function confirmScan(orderId, stepIndex, totalSteps, value){
         markStepDone({stopPropagation:()=>{}}, orderId, stepIndex, totalSteps);
       }, 800);
     } else {
-      // Unknown barcode — still allow confirmation, just log it
-      resultEl.innerHTML=`<span style="color:var(--orange);font-weight:700">⚠ Barcode not in system yet — confirmed anyway. Add to SKU Master to track it.</span>`;
+      // Unknown barcode — stay visible 8 seconds so employee can read it
+      resultEl.innerHTML=`
+        <div style="color:var(--orange);font-weight:700;margin-bottom:4px">⚠ Barcode not in system yet — confirmed anyway.</div>
+        <div style="color:var(--ink3);font-size:11px;margin-bottom:4px">This barcode isn't linked to any SKU or pallet. Add it to SKU Master to track it in future.</div>
+        <div style="color:var(--ink3);font-size:11px">Advancing in <strong id="scanCountdown_${orderId}_${stepIndex}">8</strong> seconds…
+          <button onclick="clearInterval(window._scanTicker_${orderId}_${stepIndex});markStepDone({stopPropagation:()=>{}},'${orderId}',${stepIndex},${totalSteps})"
+            style="margin-left:10px;background:none;border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;cursor:pointer;color:var(--ink2)">
+            Advance now
+          </button>
+        </div>`;
       resultEl.style.display='block';
+      let secs=8;
+      window[`_scanTicker_${orderId}_${stepIndex}`] = setInterval(()=>{
+        secs--;
+        const el=document.getElementById(`scanCountdown_${orderId}_${stepIndex}`);
+        if(el) el.textContent=secs;
+        if(secs<=0) clearInterval(window[`_scanTicker_${orderId}_${stepIndex}`]);
+      },1000);
       setTimeout(()=>{
+        clearInterval(window[`_scanTicker_${orderId}_${stepIndex}`]);
         markStepDone({stopPropagation:()=>{}}, orderId, stepIndex, totalSteps);
-      }, 1200);
+      }, 8000);
     }
   }
 }
