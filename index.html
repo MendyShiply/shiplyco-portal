@@ -3274,14 +3274,51 @@ function buildMyTasksHtml(mine, unassigned){
           <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);margin-bottom:10px">Fulfillment Steps</div>
           ${steps.map((step,i)=>{
             const done=i<stepDone, active=i===stepDone, isLast=i===steps.length-1;
-            return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;margin-bottom:6px;background:${done?'var(--green-bg)':active?'var(--red-light)':'var(--surface)'};border:1px solid ${done?'var(--green)':active?'var(--red)':'var(--border)'}">
-              <div style="width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:${done?'var(--green)':active?'var(--red)':'var(--border)'};color:${done||active?'#fff':'var(--ink3)'}">
+            // Determine what action this step needs
+            const isScanStep   = step.toLowerCase().includes('locate') || step.toLowerCase().includes('find');
+            const isPickStep   = step.toLowerCase().includes('pick');
+            const isCompleteStep = isLast;
+            return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;margin-bottom:6px;
+                        background:${done?'var(--green-bg)':active?'var(--red-light)':'var(--surface)'};
+                        border:1px solid ${done?'var(--green)':active?'var(--red)':'var(--border)'}">
+              <div style="width:24px;height:24px;border-radius:50%;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;
+                          background:${done?'var(--green)':active?'var(--red)':'var(--border)'};color:${done||active?'#fff':'var(--ink3)'}">
                 ${done?'✓':i+1}
               </div>
-              <span style="flex:1;font-size:13px;font-weight:${active?'700':'500'};color:${done?'var(--green)':active?'var(--ink)':'var(--ink3)'};${done?'text-decoration:line-through':''}">
-                ${step}
-              </span>
-              ${active&&isLast?`<button class="btn btn-red" style="font-size:11px;padding:6px 14px" onclick="sbMarkOrderStatus('${o.id}','picked_up');_expandedOrder=null">✅ Complete</button>`:active?`<button class="act-btn act-process" style="font-size:11px" onclick="markStepDone(event,'${o.id}',${i},${steps.length})">✓ Done</button>`:done?`<span style="font-size:12px;color:var(--green)">✓</span>`:''}
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:${active?'700':'500'};color:${done?'var(--green)':active?'var(--ink)':'var(--ink3)'};${done?'text-decoration:line-through':''}">
+                  ${step}
+                </div>
+                ${active && isScanStep ? `
+                <div style="margin-top:10px">
+                  <div style="font-size:11px;color:var(--ink3);margin-bottom:6px">Scan pallet barcode — or type it manually if no scanner connected</div>
+                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                    <input type="text" id="scanInput_${o.id}_${i}"
+                      placeholder="Scan or type barcode…"
+                      autofocus
+                      style="flex:1;min-width:160px;padding:9px 12px;border:2px solid var(--red);border-radius:8px;font-family:monospace;font-size:14px;font-weight:700;outline:none"
+                      onkeydown="if(event.key==='Enter')confirmScan('${o.id}',${i},${steps.length},this.value)"
+                    />
+                    <button class="btn btn-red" style="font-size:12px;padding:9px 16px;flex-shrink:0"
+                      onclick="confirmScan('${o.id}',${i},${steps.length},document.getElementById('scanInput_${o.id}_${i}').value)">
+                      ✓ Confirm
+                    </button>
+                    ${('BarcodeDetector' in window)?`
+                    <button class="btn" style="font-size:12px;padding:9px 14px;flex-shrink:0" onclick="openCameraScanner('${o.id}',${i},${steps.length})" title="Use camera">
+                      📷 Camera
+                    </button>`:''}
+                  </div>
+                  <div id="scanResult_${o.id}_${i}" style="margin-top:6px;font-size:12px;display:none"></div>
+                </div>`
+                : active && isCompleteStep ? `
+                <div style="margin-top:8px">
+                  <button class="btn btn-red" style="font-size:12px;padding:8px 18px" onclick="sbMarkOrderStatus('${o.id}','picked_up');_expandedOrder=null">✅ Mark Complete</button>
+                </div>`
+                : active ? `
+                <div style="margin-top:8px">
+                  <button class="act-btn act-process" style="font-size:12px" onclick="markStepDone(event,'${o.id}',${i},${steps.length})">✓ Done</button>
+                </div>` : done ? `<div style="font-size:11px;color:var(--green);margin-top:2px">✓ Completed</div>` : ''}
+              </div>
             </div>`;
           }).join('')}
           ${pickLines.length?`
@@ -3416,6 +3453,95 @@ function markStepDone(e, orderId, stepIndex, totalSteps){
   e.stopPropagation();
   if(stepIndex>=totalSteps-2){sbMarkOrderStatus(orderId,'processed');}
   else{showToast(`✓ Step ${stepIndex+1} complete`);refreshMyTasks();}
+}
+
+// ── BARCODE SCAN CONFIRMATION ──
+function confirmScan(orderId, stepIndex, totalSteps, value){
+  const v = (value||'').trim();
+  const resultEl = document.getElementById(`scanResult_${orderId}_${stepIndex}`);
+
+  if(!v){
+    if(resultEl){resultEl.textContent='⚠ Please scan or enter a barcode first.';resultEl.style.color='var(--orange)';resultEl.style.display='block';}
+    return;
+  }
+
+  // Look up barcode in PALLETS and SKU_CATALOG
+  const palletMatch = PALLETS.find(p=>p.items?.some(i=>i.upc===v||i.sku===v));
+  const skuMatch    = SKU_CATALOG.find(s=>s.upc===v||s.sku===v);
+  const invMatch    = INVENTORY.find(l=>l.id===v||l.sku===v);
+
+  if(resultEl){
+    if(palletMatch||skuMatch||invMatch){
+      const name = skuMatch?.name||palletMatch?.items?.[0]?.desc||invMatch?.desc||v;
+      const loc  = palletMatch?.loc||invMatch?.id||'—';
+      resultEl.innerHTML=`<span style="color:var(--green);font-weight:700">✅ Barcode confirmed — ${name}${loc!=='—'?' · Location: '+loc:''}</span>`;
+      resultEl.style.display='block';
+      // Auto-advance after short delay
+      setTimeout(()=>{
+        markStepDone({stopPropagation:()=>{}}, orderId, stepIndex, totalSteps);
+      }, 800);
+    } else {
+      // Unknown barcode — still allow confirmation, just log it
+      resultEl.innerHTML=`<span style="color:var(--orange);font-weight:700">⚠ Barcode not in system yet — confirmed anyway. Add to SKU Master to track it.</span>`;
+      resultEl.style.display='block';
+      setTimeout(()=>{
+        markStepDone({stopPropagation:()=>{}}, orderId, stepIndex, totalSteps);
+      }, 1200);
+    }
+  }
+}
+
+// ── CAMERA BARCODE SCANNER (phones/tablets with BarcodeDetector API) ──
+let _cameraStream = null;
+function openCameraScanner(orderId, stepIndex, totalSteps){
+  // Create overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'cameraOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px';
+  overlay.innerHTML = `
+    <div style="color:#fff;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase">Point camera at barcode</div>
+    <video id="scannerVideo" autoplay playsinline style="width:min(90vw,400px);border-radius:12px;border:3px solid var(--red)"></video>
+    <div style="width:min(90vw,400px);height:3px;background:var(--red);border-radius:2px;animation:scan 1.5s ease-in-out infinite"></div>
+    <div id="cameraStatus" style="color:rgba(255,255,255,0.6);font-size:13px">Initializing camera…</div>
+    <button onclick="closeCameraScanner()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:10px 24px;color:#fff;font-family:Barlow,sans-serif;font-size:13px;cursor:pointer">Cancel</button>`;
+  document.body.appendChild(overlay);
+
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(stream=>{
+    _cameraStream = stream;
+    const video = document.getElementById('scannerVideo');
+    video.srcObject = stream;
+    document.getElementById('cameraStatus').textContent = 'Scanning — hold steady over barcode';
+
+    const detector = new BarcodeDetector({formats:['code_128','code_39','ean_13','ean_8','qr_code','data_matrix','upc_a','upc_e']});
+    let scanning = true;
+
+    const scan = async()=>{
+      if(!scanning||!document.getElementById('cameraOverlay')) return;
+      try {
+        const barcodes = await detector.detect(video);
+        if(barcodes.length>0){
+          scanning = false;
+          const code = barcodes[0].rawValue;
+          closeCameraScanner();
+          // Fill the input and confirm
+          const input = document.getElementById(`scanInput_${orderId}_${stepIndex}`);
+          if(input) input.value = code;
+          confirmScan(orderId, stepIndex, totalSteps, code);
+          return;
+        }
+      } catch(e){}
+      requestAnimationFrame(scan);
+    };
+    requestAnimationFrame(scan);
+  }).catch(err=>{
+    const status = document.getElementById('cameraStatus');
+    if(status) status.textContent = '⚠ Camera access denied — use manual entry';
+  });
+}
+
+function closeCameraScanner(){
+  if(_cameraStream){ _cameraStream.getTracks().forEach(t=>t.stop()); _cameraStream=null; }
+  document.getElementById('cameraOverlay')?.remove();
 }
 
 
