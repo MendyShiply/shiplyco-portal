@@ -3320,20 +3320,37 @@ function buildMyTasksHtml(mine, unassigned){
     unassigned.forEach(o=>{
       const cust  = CUSTOMERS.find(c=>c.id===o.cust_id);
       const items = Array.isArray(o.items)?o.items:(typeof o.items==='string'?JSON.parse(o.items||'[]'):[]);
+      const isOpen = _expandedOrder===('u_'+o.id);
       html+=`
-      <div class="card" style="margin-bottom:8px;border-left:4px solid var(--orange)">
-        <div style="padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-          <div style="flex:1">
+      <div class="card" style="margin-bottom:8px;border-left:4px solid var(--orange);overflow:hidden">
+        <!-- Tap to preview -->
+        <div onclick="toggleUnassignedExpand('${o.id}')"
+          style="padding:12px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:10px;background:${isOpen?'var(--orange-bg)':'var(--surface)'}">
+          <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">
               <span style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800">${typeIcons[o.type]||'📦'} ${o.id}</span>
               <span class="tag to" style="font-size:11px">${(o.status||'').replace('_',' ')}</span>
             </div>
             <div style="font-size:12px;font-weight:600;color:var(--ink2)">${cust?.name||o.cust_id} · ${typeLabels[o.type]||o.type}</div>
             <div style="font-size:11px;color:var(--ink3)">${o.date||'—'} ${o.time?'· '+o.time+' slot':''} ${o.channel?'· '+o.channel:''}</div>
-            ${items.length?`<div style="font-size:11px;color:var(--ink2);margin-top:2px">${items.map(i=>`${i.desc||i.sku} × ${i.qty}`).join(', ')}</div>`:''}
           </div>
-          <button class="btn btn-red" style="font-size:12px;padding:8px 18px;flex-shrink:0" onclick="claimAndExpand('${o.id}')">＋ Claim</button>
+          <span style="font-size:18px;color:var(--ink3);flex-shrink:0;${isOpen?'transform:rotate(180deg)':''}">⌄</span>
         </div>
+        <!-- Expanded preview -->
+        ${isOpen?`
+        <div style="border-top:1px solid var(--border);padding:14px 18px;background:var(--bg)">
+          ${items.length?`
+          <div style="margin-bottom:10px">
+            <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);margin-bottom:6px">Items</div>
+            ${items.map(i=>`<div style="font-size:13px;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;margin-bottom:4px">${i.desc||i.sku} <span style="color:var(--ink3)">× ${i.qty}</span></div>`).join('')}
+          </div>`:''}
+          ${o.pallets?`<div style="font-size:13px;margin-bottom:8px">📦 <strong>${o.pallets}</strong> pallet${o.pallets>1?'s':''}</div>`:''}
+          ${o.channel?`<div style="font-size:12px;color:var(--ink3);margin-bottom:4px">🛒 Channel: ${o.channel}</div>`:''}
+          ${o.notes?`<div style="font-size:12px;color:var(--ink3);margin-bottom:4px">📝 ${o.notes}</div>`:''}
+          <div style="margin-top:12px">
+            <button class="btn btn-red" style="font-size:12px;padding:8px 20px" onclick="claimAndExpand('${o.id}')">＋ Claim This Order</button>
+          </div>
+        </div>`:''}
       </div>`;
     });
   }
@@ -3342,6 +3359,12 @@ function buildMyTasksHtml(mine, unassigned){
 
 function toggleTaskExpand(orderId){
   _expandedOrder = _expandedOrder===orderId?null:orderId;
+  refreshMyTasks();
+}
+
+function toggleUnassignedExpand(orderId){
+  const key = 'u_'+orderId;
+  _expandedOrder = _expandedOrder===key?null:key;
   refreshMyTasks();
 }
 
