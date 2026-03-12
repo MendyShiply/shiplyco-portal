@@ -687,8 +687,8 @@ const CUSTOMERS=[
 ];
 const NAV={
   customer:[{id:'dashboard',l:'Dashboard',i:'grid'},{id:'trucks',l:'Truck Manifest',i:'truck'},{id:'containers',l:'Outbound Containers',i:'ship'},{id:'docs',l:'Docs & Media',i:'file'},{id:'placeorder',l:'Place an Order',i:'cart'},{id:'myorders',l:'My Orders',i:'box'},{id:'billing',l:'Billing & Rates',i:'dollar'},{id:'invoices',l:'Invoices',i:'invoice'}],
-  employee:[{id:'mytasks',l:'My Tasks',i:'zap'},{id:'dispatch',l:"All Orders",i:'box'},{id:'picklist',l:'Pick Lists',i:'box'},{id:'inventory',l:'Inventory & Scan',i:'pkg'},{id:'skumaster',l:'SKU Master',i:'pkg'},{id:'supplies',l:'Supplies',i:'tag'},{id:'shipping',l:'Shipping & Rates',i:'send'},{id:'edi',l:'EDI',i:'send'},{id:'cyclecounts',l:'Cycle Counts',i:'pkg'},{id:'ai',l:'AI Assistant',i:'zap'},{id:'entry',l:'Log New Truck',i:'plus'},{id:'labels',l:'Label Printer',i:'tag'},{id:'trucks',l:'Truck Manifest',i:'truck'},{id:'containers',l:'Containers',i:'ship'},{id:'docs',l:'Docs & Media',i:'file'},{id:'billing',l:'Billing & Rates',i:'dollar'},{id:'ai',l:'AI Assistant',i:'zap'}],
-  admin:[{id:'admin',l:'User Management',i:'users'},{id:'pricing',l:'Customer Pricing',i:'dollar'},{id:'dashboard',l:'Dashboard',i:'grid'},{id:'reports',l:'Reports',i:'chart'},{id:'dispatch',l:"Today's Orders",i:'zap'},{id:'leaderboard',l:'Leaderboard',i:'chart'},{id:'mytasks',l:'My Tasks',i:'zap'},{id:'myorders',l:'All Orders',i:'box'},{id:'picklist',l:'Pick Lists',i:'box'},{id:'inventory',l:'Inventory & Scan',i:'pkg'},{id:'skumaster',l:'SKU Master',i:'pkg'},{id:'supplies',l:'Supplies',i:'tag'},{id:'shipping',l:'Shipping & Rates',i:'send'},{id:'marketplaces',l:'Marketplaces',i:'cart'},{id:'edi',l:'EDI',i:'send'},{id:'cyclecounts',l:'Cycle Counts',i:'pkg'},{id:'bol',l:'Bill of Lading',i:'file'},{id:'ai',l:'AI Assistant',i:'zap'},{id:'twilio',l:'Notifications',i:'send'},{id:'labels',l:'Label Printer',i:'tag'},{id:'trucks',l:'Truck Manifest',i:'truck'},{id:'containers',l:'Containers',i:'ship'},{id:'billing',l:'Billing & Rates',i:'dollar'},{id:'invoices',l:'Invoices',i:'invoice'},{id:'entry',l:'Log New Truck',i:'plus'}],
+  employee:[{id:'mytasks',l:'My Tasks',i:'zap'},{id:'dispatch',l:"All Orders",i:'box'},{id:'inventory',l:'Inventory & Scan',i:'pkg'},{id:'skumaster',l:'SKU Master',i:'pkg'},{id:'supplies',l:'Supplies',i:'tag'},{id:'shipping',l:'Shipping & Rates',i:'send'},{id:'edi',l:'EDI',i:'send'},{id:'cyclecounts',l:'Cycle Counts',i:'pkg'},{id:'ai',l:'AI Assistant',i:'zap'},{id:'entry',l:'Log New Truck',i:'plus'},{id:'labels',l:'Label Printer',i:'tag'},{id:'trucks',l:'Truck Manifest',i:'truck'},{id:'containers',l:'Containers',i:'ship'},{id:'docs',l:'Docs & Media',i:'file'},{id:'billing',l:'Billing & Rates',i:'dollar'},{id:'ai',l:'AI Assistant',i:'zap'}],
+  admin:[{id:'admin',l:'User Management',i:'users'},{id:'pricing',l:'Customer Pricing',i:'dollar'},{id:'dashboard',l:'Dashboard',i:'grid'},{id:'reports',l:'Reports',i:'chart'},{id:'dispatch',l:"Today's Orders",i:'zap'},{id:'leaderboard',l:'Leaderboard',i:'chart'},{id:'mytasks',l:'My Tasks',i:'zap'},{id:'myorders',l:'All Orders',i:'box'},{id:'inventory',l:'Inventory & Scan',i:'pkg'},{id:'skumaster',l:'SKU Master',i:'pkg'},{id:'supplies',l:'Supplies',i:'tag'},{id:'shipping',l:'Shipping & Rates',i:'send'},{id:'marketplaces',l:'Marketplaces',i:'cart'},{id:'edi',l:'EDI',i:'send'},{id:'cyclecounts',l:'Cycle Counts',i:'pkg'},{id:'bol',l:'Bill of Lading',i:'file'},{id:'ai',l:'AI Assistant',i:'zap'},{id:'twilio',l:'Notifications',i:'send'},{id:'labels',l:'Label Printer',i:'tag'},{id:'trucks',l:'Truck Manifest',i:'truck'},{id:'containers',l:'Containers',i:'ship'},{id:'billing',l:'Billing & Rates',i:'dollar'},{id:'invoices',l:'Invoices',i:'invoice'},{id:'entry',l:'Log New Truck',i:'plus'}],
 };
 const SVGS={
   grid:'<polyline points="3 3 3 8 8 8 8 3"/><polyline points="10 3 10 8 15 8 15 3"/><polyline points="3 10 3 15 8 15 8 10"/><polyline points="10 10 10 15 15 15 15 10"/>',
@@ -846,7 +846,7 @@ function buildNav(){
   const sections=role==='admin'
     ?[
       {lbl:'Overview',     ids:['admin','dashboard','reports','leaderboard']},
-      {lbl:'Daily Ops',    ids:['dispatch','mytasks','picklist','myorders']},
+      {lbl:'Daily Ops',    ids:['dispatch','mytasks','myorders']},
       {lbl:'Warehouse',    ids:['inventory','skumaster','cyclecounts','labels','supplies']},
       {lbl:'Inbound',      ids:['entry','trucks','containers']},
       {lbl:'Outbound',     ids:['bol','shipping']},
@@ -857,7 +857,7 @@ function buildNav(){
     ]
     :role==='employee'
     ?[
-      {lbl:'My Work',      ids:['mytasks','dispatch','picklist','ai']},
+      {lbl:'My Work',      ids:['mytasks','dispatch','ai']},
       {lbl:'Warehouse',    ids:['inventory','skumaster','cyclecounts','labels','supplies']},
       {lbl:'Inbound',      ids:['entry','trucks','containers']},
       {lbl:'Outbound',     ids:['bol','shipping','edi']},
@@ -3191,51 +3191,176 @@ async function refreshDispatch(){
   renderDispatchBoard(_dispatchOrders);
 }
 
-// ── MY TASKS PAGE — Employee's personal fulfillment queue ──
+// ── MY TASKS PAGE — tap to expand, fulfillment + pick directions inline ──
+let _expandedOrder = null;
+
 function pgMyTasks(){
   if(!currentEmployee){
     return `<div class="pg-head"><div class="pg-title">My Tasks</div></div>
     <div class="card" style="padding:40px;text-align:center;color:var(--ink3)">Log in as an employee to see your tasks.</div>`;
   }
-
   setTimeout(async()=>{
     const wrap = document.getElementById('myTasksWrap');
     if(!wrap) return;
-    wrap.innerHTML=`<div style="padding:40px;text-align:center;color:var(--ink3)"><span style="animation:spin 1s linear infinite;display:inline-block">⏳</span> Loading your tasks…</div>`;
-
-    // My assigned orders
-    const {data:mine} = await sb.from('orders')
-      .select('*')
-      .eq('assigned_to', currentEmployee.name)
-      .not('status','eq','picked_up')
-      .order('date',{ascending:true});
-
-    // Unassigned orders (available to claim)
-    const {data:unassigned} = await sb.from('orders')
-      .select('*')
-      .is('assigned_to', null)
-      .not('status','eq','picked_up')
-      .order('date',{ascending:true});
-
-    _myTaskOrders = mine||[];
-    renderMyTasks(mine||[], unassigned||[]);
+    wrap.innerHTML=`<div style="padding:40px;text-align:center;color:var(--ink3)"><span style="animation:spin 1s linear infinite;display:inline-block">⏳</span> Loading…</div>`;
+    await refreshMyTasks();
   }, 100);
-
   return `
   <div class="pg-head" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
     <div>
       <div class="pg-title">My Tasks</div>
-      <div class="pg-sub">Your assigned orders — claim, fulfill, and complete step by step</div>
+      <div class="pg-sub" id="myTaskSubtitle">Loading…</div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px">
-      <div>
-        <div style="font-size:14px;font-weight:700">${currentEmployee.name}</div>
-        <div style="font-size:11px;color:var(--ink3)" id="myTaskCount">Loading…</div>
-      </div>
-    </div>
+    <button class="btn" onclick="refreshMyTasks()">↻ Refresh</button>
   </div>
   <div id="myTasksWrap"></div>`;
 }
+
+async function refreshMyTasks(){
+  const wrap = document.getElementById('myTasksWrap');
+  if(!wrap) return;
+  const [{data:mine},{data:unassigned}] = await Promise.all([
+    sb.from('orders').select('*').eq('assigned_to',currentEmployee.name).not('status','eq','picked_up').order('date',{ascending:true}),
+    sb.from('orders').select('*').is('assigned_to',null).not('status','eq','picked_up').order('date',{ascending:true})
+  ]);
+  const sub = document.getElementById('myTaskSubtitle');
+  if(sub) sub.textContent=`${(mine||[]).length} active · ${(unassigned||[]).length} available to claim`;
+  buildMyTasksHtml(mine||[], unassigned||[]);
+}
+
+function buildMyTasksHtml(mine, unassigned){
+  const wrap = document.getElementById('myTasksWrap');
+  if(!wrap) return;
+  const typeIcons  = {pallet_out:'🚚',pickpack:'📦',fbm:'📦',fba:'🏭',marketplace:'📦'};
+  const typeLabels = {pallet_out:'Pallet Outbound',pickpack:'Pick & Pack',fbm:'Pick & Pack',fba:'FBA Prep',marketplace:'Pick & Pack'};
+  const STEPS = {
+    pallet_out: ['Locate pallet in warehouse','Wrap & secure pallet','Apply outbound label','Stage at dock','Mark picked up'],
+    pickpack:   ['Review pick list below','Pick all items by location','Pack into box','Apply shipping label','Mark complete'],
+    fbm:        ['Review pick list below','Pick all items by location','Pack into box','Apply shipping label','Mark complete'],
+    fba:        ['Review pick list below','Pick all items','Label each unit','Kit & box','Palletize for FBA','Mark complete'],
+    marketplace:['Review pick list below','Pick items','Pack & label','Mark complete'],
+  };
+  let html = '';
+
+  // ── MY CLAIMED ORDERS ──
+  if(mine.length){
+    html+=`<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--red);margin-bottom:10px">My Orders (${mine.length})</div>`;
+    mine.forEach(o=>{
+      const cust   = CUSTOMERS.find(c=>c.id===o.cust_id);
+      const steps  = STEPS[o.type]||STEPS.pickpack;
+      const items  = Array.isArray(o.items)?o.items:(typeof o.items==='string'?JSON.parse(o.items||'[]'):[]);
+      const isOpen = _expandedOrder===o.id;
+      const stepDone = o.status==='processed'?steps.length-1:0;
+      const pickLines = items.map(item=>{
+        const inv = INVENTORY.find(l=>l.sku===item.sku||l.desc?.includes((item.desc||'').split(' ')[0]||'x'));
+        return {loc:inv?.id||'—', desc:item.desc||item.sku||'', units:item.qty, sku:item.sku, openCase:inv?.openCase||false};
+      });
+      html+=`
+      <div class="card" style="margin-bottom:10px;border-left:4px solid var(--red);overflow:hidden">
+        <!-- Tap header to expand/collapse -->
+        <div onclick="toggleTaskExpand('${o.id}')" style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:12px;background:${isOpen?'var(--red-light)':'var(--surface)'}">
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+              <span style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800">${typeIcons[o.type]||'📦'} ${o.id}</span>
+              <span class="tag ${o.status==='processed'?'tb':'to'}" style="font-size:11px">${(o.status||'').replace('_',' ')}</span>
+              ${stepDone>0?`<span style="font-size:11px;color:var(--green);font-weight:700">Step ${stepDone}/${steps.length-1} done</span>`:''}
+            </div>
+            <div style="font-size:13px;font-weight:600;color:var(--ink2)">${cust?.name||o.cust_id} · ${typeLabels[o.type]||o.type} ${o.date?'· '+o.date:''} ${o.time?'· '+o.time+' slot':''}</div>
+          </div>
+          <span style="font-size:20px;color:var(--ink3);${isOpen?'transform:rotate(180deg)':''}">⌄</span>
+        </div>
+        ${isOpen?`
+        <div style="border-top:1px solid var(--border);padding:16px 18px;background:var(--bg)">
+          ${items.length?`<div style="font-size:12px;color:var(--ink2);margin-bottom:14px;padding:10px 12px;background:var(--surface);border-radius:7px;border:1px solid var(--border)"><strong>Items:</strong> ${items.map(i=>`${i.desc||i.sku} × ${i.qty}`).join(', ')}</div>`:''}
+          ${o.notes?`<div style="font-size:12px;color:var(--ink3);margin-bottom:12px">📝 ${o.notes}</div>`:''}
+          <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);margin-bottom:10px">Fulfillment Steps</div>
+          ${steps.map((step,i)=>{
+            const done=i<stepDone, active=i===stepDone, isLast=i===steps.length-1;
+            return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;margin-bottom:6px;background:${done?'var(--green-bg)':active?'var(--red-light)':'var(--surface)'};border:1px solid ${done?'var(--green)':active?'var(--red)':'var(--border)'}">
+              <div style="width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:${done?'var(--green)':active?'var(--red)':'var(--border)'};color:${done||active?'#fff':'var(--ink3)'}">
+                ${done?'✓':i+1}
+              </div>
+              <span style="flex:1;font-size:13px;font-weight:${active?'700':'500'};color:${done?'var(--green)':active?'var(--ink)':'var(--ink3)'};${done?'text-decoration:line-through':''}">
+                ${step}
+              </span>
+              ${active&&isLast?`<button class="btn btn-red" style="font-size:11px;padding:6px 14px" onclick="sbMarkOrderStatus('${o.id}','picked_up');_expandedOrder=null">✅ Complete</button>`:active?`<button class="act-btn act-process" style="font-size:11px" onclick="markStepDone(event,'${o.id}',${i},${steps.length})">✓ Done</button>`:done?`<span style="font-size:12px;color:var(--green)">✓</span>`:''}
+            </div>`;
+          }).join('')}
+          ${pickLines.length?`
+          <div style="margin-top:16px">
+            <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);margin-bottom:10px">📍 Pick Directions</div>
+            ${pickLines.map((d,i)=>`
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${d.openCase?'var(--orange)':i===0?'var(--red)':'var(--border)'};border-radius:8px;margin-bottom:6px;background:${d.openCase?'var(--orange-bg)':i===0?'var(--red-light)':'var(--surface)'}">
+              <span style="font-family:monospace;font-size:14px;font-weight:900;color:var(--red);min-width:70px">${d.loc}</span>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:600">${d.desc}</div>
+                <div style="font-size:11px;color:var(--ink3)">Pick ${d.units} unit${d.units!==1?'s':''}${d.sku?' · '+d.sku:''}</div>
+                ${d.openCase?`<div style="font-size:11px;color:var(--orange);font-weight:700">⚠ Open case — pick loose units first</div>`:''}
+              </div>
+              <button class="act-btn" style="font-size:11px" onclick="confirmPickLine(this,'${o.id}')">✓ Picked</button>
+            </div>`).join('')}
+          </div>`:''}
+          <div style="margin-top:14px;text-align:right">
+            <button class="btn" style="font-size:11px" onclick="sbReleaseOrder('${o.id}')">↩ Release Order</button>
+          </div>
+        </div>`:''}
+      </div>`;
+    });
+  } else {
+    html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:28px;text-align:center;color:var(--ink3);margin-bottom:18px">
+      <div style="font-size:28px;margin-bottom:8px">✅</div>
+      <div style="font-weight:600">No tasks claimed yet</div>
+      <div style="font-size:12px;margin-top:4px">Claim an order below to get started</div>
+    </div>`;
+  }
+
+  // ── AVAILABLE TO CLAIM ──
+  if(unassigned.length){
+    html+=`<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--orange);margin-top:20px;margin-bottom:10px">Available to Claim (${unassigned.length})</div>`;
+    unassigned.forEach(o=>{
+      const cust  = CUSTOMERS.find(c=>c.id===o.cust_id);
+      const items = Array.isArray(o.items)?o.items:(typeof o.items==='string'?JSON.parse(o.items||'[]'):[]);
+      html+=`
+      <div class="card" style="margin-bottom:8px;border-left:4px solid var(--orange)">
+        <div style="padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+              <span style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800">${typeIcons[o.type]||'📦'} ${o.id}</span>
+              <span class="tag to" style="font-size:11px">${(o.status||'').replace('_',' ')}</span>
+            </div>
+            <div style="font-size:12px;font-weight:600;color:var(--ink2)">${cust?.name||o.cust_id} · ${typeLabels[o.type]||o.type}</div>
+            <div style="font-size:11px;color:var(--ink3)">${o.date||'—'} ${o.time?'· '+o.time+' slot':''} ${o.channel?'· '+o.channel:''}</div>
+            ${items.length?`<div style="font-size:11px;color:var(--ink2);margin-top:2px">${items.map(i=>`${i.desc||i.sku} × ${i.qty}`).join(', ')}</div>`:''}
+          </div>
+          <button class="btn btn-red" style="font-size:12px;padding:8px 18px;flex-shrink:0" onclick="claimAndExpand('${o.id}')">＋ Claim</button>
+        </div>
+      </div>`;
+    });
+  }
+  wrap.innerHTML = html;
+}
+
+function toggleTaskExpand(orderId){
+  _expandedOrder = _expandedOrder===orderId?null:orderId;
+  refreshMyTasks();
+}
+
+async function claimAndExpand(orderId){
+  if(!currentEmployee) return;
+  const {error} = await sb.from('orders').update({assigned_to:currentEmployee.name, updated_at:new Date().toISOString()}).eq('id',orderId);
+  if(error){showToast('⚠ '+error.message);return;}
+  _expandedOrder = orderId;
+  showToast(`✓ ${orderId} claimed`);
+  startTimer(orderId);
+  refreshMyTasks();
+}
+
+function markStepDone(e, orderId, stepIndex, totalSteps){
+  e.stopPropagation();
+  if(stepIndex>=totalSteps-2){sbMarkOrderStatus(orderId,'processed');}
+  else{showToast(`✓ Step ${stepIndex+1} complete`);refreshMyTasks();}
+}
+
 
 function renderMyTasks(mine, unassigned){
   const wrap = document.getElementById('myTasksWrap');
@@ -3324,13 +3449,6 @@ function renderMyTasks(mine, unassigned){
             </div>`;
           }).join('')}
         </div>
-
-        ${o.type==='pickpack'||o.type==='fbm'||o.type==='fba'?`
-        <div style="padding:0 18px 14px">
-          <button class="btn" style="font-size:12px;width:100%;background:var(--blue-bg);color:var(--blue);border-color:var(--blue)" onclick="showPage('picklist')">
-            📋 View Full Pick List for this Order
-          </button>
-        </div>`:''}
       </div>`;
     });
   }
@@ -3528,7 +3646,7 @@ function pgMyTasks_OLD(){
       <div style="padding:8px 18px 12px;border-top:1px solid rgba(0,0,0,0.06);display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         ${o.status==='pending'?`<button class="act-btn act-process" onclick="markProcessed('${o.id}')" style="font-size:11px">✓ Mark Processed</button>`:''}
         ${o.status==='processed'?`<button class="act-btn act-pickup" onclick="markPickedUp('${o.id}')" style="font-size:11px">🚚 Mark Picked Up</button>`:''}
-        <button class="act-btn" onclick="showPage('picklist')" style="font-size:11px;background:var(--blue-bg);color:var(--blue)">📋 Pick Directions</button>
+        
         <span style="font-size:11px;color:var(--red);font-weight:700;margin-left:auto">💰 ${fmt(o.autoCharge.amt)}</span>
       </div>
     </div>`;
