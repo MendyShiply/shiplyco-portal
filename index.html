@@ -2870,8 +2870,6 @@ function renderOrdersPage(orders){
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span class="tag ${o.status==='picked_up'?'tg':o.status==='processed'?'tb':'to'}">${(o.status||'').replace('_',' ').toUpperCase()}</span>
-          ${isStaff&&o.status==='pending'?`<button class="act-btn act-process" onclick="sbMarkOrderStatus('${o.id}','processed')">✓ Mark Processed</button>`:''}
-          ${isStaff&&o.status==='processed'?`<button class="act-btn act-pickup" onclick="sbMarkOrderStatus('${o.id}','picked_up')">🚚 Mark Picked Up</button>`:''}
         </div>
       </div>
       <div style="padding:13px 18px">
@@ -3339,16 +3337,52 @@ function buildMyTasksHtml(mine, unassigned){
         <!-- Expanded preview -->
         ${isOpen?`
         <div style="border-top:1px solid var(--border);padding:14px 18px;background:var(--bg)">
+
+          <!-- Meta row -->
+          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px">
+            <div><span style="color:var(--ink3)">Type</span> &nbsp;<strong>${typeLabels[o.type]||o.type}</strong></div>
+            ${o.channel?`<div><span style="color:var(--ink3)">Channel</span> &nbsp;<strong>${o.channel}</strong></div>`:''}
+            ${o.date?`<div><span style="color:var(--ink3)">Date</span> &nbsp;<strong>${o.date}</strong></div>`:''}
+            ${o.time?`<div><span style="color:var(--ink3)">Slot</span> &nbsp;<strong>${o.time}</strong></div>`:''}
+            ${o.pallets?`<div><span style="color:var(--ink3)">Pallets</span> &nbsp;<strong>${o.pallets}</strong></div>`:''}
+          </div>
+
+          <!-- Items -->
           ${items.length?`
-          <div style="margin-bottom:10px">
-            <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);margin-bottom:6px">Items</div>
-            ${items.map(i=>`<div style="font-size:13px;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;margin-bottom:4px">${i.desc||i.sku} <span style="color:var(--ink3)">× ${i.qty}</span></div>`).join('')}
+          <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);margin-bottom:8px">What's in this order</div>
+          ${items.map(i=>{
+            const inv = SKU_CATALOG.find(s=>s.sku===i.sku||s.id===i.sku);
+            return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:700;color:var(--ink)">${i.desc||inv?.name||i.sku||'Unknown item'}</div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:3px;font-size:11px;color:var(--ink3)">
+                  ${i.sku?`<span>SKU: ${i.sku}</span>`:''}
+                  ${inv?.brand?`<span>Brand: ${inv.brand}</span>`:''}
+                  ${inv?.category?`<span>${inv.category}</span>`:''}
+                  ${i.color||inv?.color?`<span>🎨 ${i.color||inv?.color}</span>`:''}
+                  ${i.size||inv?.size?`<span>📐 ${i.size||inv?.size}</span>`:''}
+                  ${inv?.condition?`<span>Cond: ${inv.condition}</span>`:''}
+                </div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:18px;font-weight:800;color:var(--ink)">${i.qty}</div>
+                <div style="font-size:10px;color:var(--ink3)">units</div>
+              </div>
+            </div>`;
+          }).join('')}`:''}
+
+          <!-- Pallets with location if pallet order -->
+          ${o.type==='pallet_out'&&o.pallets?`
+          <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);margin-bottom:8px;margin-top:${items.length?'12px':'0'}">Pallets to Pull</div>
+          <div style="padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:13px">
+            📦 <strong>${o.pallets}</strong> pallet${o.pallets>1?'s':''} — locations assigned at fulfillment
           </div>`:''}
-          ${o.pallets?`<div style="font-size:13px;margin-bottom:8px">📦 <strong>${o.pallets}</strong> pallet${o.pallets>1?'s':''}</div>`:''}
-          ${o.channel?`<div style="font-size:12px;color:var(--ink3);margin-bottom:4px">🛒 Channel: ${o.channel}</div>`:''}
-          ${o.notes?`<div style="font-size:12px;color:var(--ink3);margin-bottom:4px">📝 ${o.notes}</div>`:''}
-          <div style="margin-top:12px">
-            <button class="btn btn-red" style="font-size:12px;padding:8px 20px" onclick="claimAndExpand('${o.id}')">＋ Claim This Order</button>
+
+          ${o.notes?`<div style="font-size:12px;color:var(--ink3);margin-top:10px;padding:8px 12px;background:var(--orange-bg);border:1px solid var(--orange);border-radius:7px">📝 ${o.notes}</div>`:''}
+
+          <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <div style="font-size:11px;color:var(--ink3)">Tap Claim to add this to your task list</div>
+            <button class="btn btn-red" style="font-size:13px;padding:9px 22px;font-weight:800" onclick="claimAndExpand('${o.id}')">＋ Claim This Order</button>
           </div>
         </div>`:''}
       </div>`;
