@@ -2817,40 +2817,67 @@ function submitOrder(type){
   setTimeout(()=>showPage('myorders'),1200);
 }
 
-function pgMyOrders(){
-  const isStaff=role==='employee'||role==='admin';
-  const myOrders=isStaff?ORDERS:ORDERS.filter(o=>o.customer==='Platinum Financial Group');
-  const steps=['Pending','Processed','Picked Up'];
-  const stepKey=['pending','processed','picked_up'];
-  const typeIcons={pallet_out:'🚚',pickpack:'📦',fbm:'📦',fba:'🏭',marketplace:'📦'};
-  const typeLabels={pallet_out:'Pallet Pickup',pickpack:'Pick & Pack',fbm:'Pick & Pack',fba:'FBA Prep',marketplace:'Pick & Pack'};
-  return `
-  <div class="pg-head"><div class="pg-title">${isStaff?'All Orders':'My Orders'}</div><div class="pg-sub">${isStaff?'All customer outbound orders — full history':'All your outbound orders — track status in real time'}</div></div>
-  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
-    <div class="stat"><div class="stat-lbl">Pending</div><div class="stat-val">${myOrders.filter(o=>o.status==='pending').length}</div><span class="tag to">Awaiting processing</span></div>
-    <div class="stat"><div class="stat-lbl">Processed</div><div class="stat-val">${myOrders.filter(o=>o.status==='processed').length}</div><span class="tag tb">Ready for pickup</span></div>
-    <div class="stat"><div class="stat-lbl">Picked Up</div><div class="stat-val">${myOrders.filter(o=>o.status==='picked_up').length}</div><span class="tag tg">Completed</span></div>
-  </div>
-  ${!isStaff?`<button class="submit-btn" style="margin-bottom:18px" onclick="showPage('placeorder')">${ico('plus',13)} Place New Order</button>`:''}
-  ${myOrders.map(o=>{
-    const curStep=stepKey.indexOf(o.status);
+// ── ORDERS — Supabase wired ──
+let _sbOrders = [];
+
+async function loadOrdersFromSb(){
+  const isStaff = role==='employee'||role==='admin';
+  let query = sb.from('orders').select('*').order('date', {ascending:false});
+  if(!isStaff){
+    // Customer only sees their own orders
+    const {data:prof} = await sb.from('profiles').select('customer_id').eq('id',(await sb.auth.getUser()).data.user?.id).single();
+    if(prof?.customer_id) query = query.eq('cust_id', prof.customer_id);
+  }
+  const {data, error} = await query;
+  if(error){ showToast('⚠ Error loading orders: '+error.message); return []; }
+  return data||[];
+}
+
+function renderOrdersPage(orders){
+  const wrap = document.getElementById('ordersPageWrap');
+  if(!wrap) return;
+  const isStaff = role==='employee'||role==='admin';
+  const steps = ['Pending','Processed','Picked Up'];
+  const stepKey = ['pending','processed','picked_up'];
+  const typeIcons = {pallet_out:'🚚',pickpack:'📦',fbm:'📦',fba:'🏭',marketplace:'📦'};
+  const typeLabels = {pallet_out:'Pallet Pickup',pickpack:'Pick & Pack',fbm:'Pick & Pack',fba:'FBA Prep',marketplace:'Pick & Pack'};
+
+  const filterStatus = document.getElementById('ordersStatusFilter')?.value||'all';
+  const filterSearch = document.getElementById('ordersSearch')?.value?.toLowerCase()||'';
+  let list = orders;
+  if(filterStatus!=='all') list = list.filter(o=>o.status===filterStatus);
+  if(filterSearch) list = list.filter(o=>o.id?.toLowerCase().includes(filterSearch)||o.channel?.toLowerCase().includes(filterSearch)||o.type?.toLowerCase().includes(filterSearch));
+
+  // Update stat counts
+  document.getElementById('oStatPending').textContent  = orders.filter(o=>o.status==='pending').length;
+  document.getElementById('oStatProcessed').textContent= orders.filter(o=>o.status==='processed').length;
+  document.getElementById('oStatDone').textContent     = orders.filter(o=>o.status==='picked_up').length;
+
+  if(!list.length){
+    wrap.innerHTML=`<div style="padding:40px;text-align:center;color:var(--ink3)">No orders found</div>`;
+    return;
+  }
+
+  wrap.innerHTML = list.map(o=>{
+    const curStep = stepKey.indexOf(o.status);
+    const items = Array.isArray(o.items)?o.items:(typeof o.items==='string'?JSON.parse(o.items||'[]'):[]);
+    const cust = CUSTOMERS.find(c=>c.id===o.cust_id);
     return `<div class="order-card">
       <div class="order-card-head">
         <div>
           <div class="order-id">${typeIcons[o.type]||'📦'} ${o.id} · ${typeLabels[o.type]||o.type}</div>
-          <div class="order-meta">${o.customer} · ${o.channel} · ${o.date} · ${o.time} slot</div>
+          <div class="order-meta">${cust?.name||o.cust_id||'—'} · ${o.channel||'—'} · ${o.date||'—'}${o.time?' · '+o.time+' slot':''}</div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span class="tag ${o.status==='picked_up'?'tg':o.status==='processed'?'tb':'to'}">${o.status.replace('_',' ').toUpperCase()}</span>
-          ${isStaff&&o.status==='pending'?`<button class="act-btn act-process" onclick="markProcessed('${o.id}')">✓ Mark Processed</button>`:''}
-          ${isStaff&&o.status==='processed'?`<button class="act-btn act-pickup" onclick="markPickedUp('${o.id}')">🚚 Mark Picked Up</button>`:''}
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="tag ${o.status==='picked_up'?'tg':o.status==='processed'?'tb':'to'}">${(o.status||'').replace('_',' ').toUpperCase()}</span>
+          ${isStaff&&o.status==='pending'?`<button class="act-btn act-process" onclick="sbMarkOrderStatus('${o.id}','processed')">✓ Mark Processed</button>`:''}
+          ${isStaff&&o.status==='processed'?`<button class="act-btn act-pickup" onclick="sbMarkOrderStatus('${o.id}','picked_up')">🚚 Mark Picked Up</button>`:''}
         </div>
       </div>
       <div style="padding:13px 18px">
-        <div style="font-size:13px;color:var(--ink2);margin-bottom:12px">
-          ${o.pallets.length?o.pallets.map(p=>`Pallet ${p.num} · ${p.loc} · ${p.desc}`).join('<br>'):''}
-          ${o.items?o.items.map(i=>`${i.desc} × ${i.qty}`).join(', '):''}
-        </div>
+        ${o.notes?`<div style="font-size:12px;color:var(--ink3);margin-bottom:8px">📝 ${o.notes}</div>`:''}
+        ${o.pallets?`<div style="font-size:13px;color:var(--ink2);margin-bottom:8px">${o.pallets} pallet${o.pallets>1?'s':''}</div>`:''}
+        ${items.length?`<div style="font-size:12px;color:var(--ink2);margin-bottom:8px">${items.map(i=>`${i.desc||i.sku} × ${i.qty}`).join(', ')}</div>`:''}
         <div class="status-track">
           ${steps.map((s,i)=>`
             ${i>0?`<div class="st-line ${i<=curStep?'done':''}"></div>`:''}
@@ -2859,11 +2886,68 @@ function pgMyOrders(){
               <span style="white-space:nowrap">${s}</span>
             </div>`).join('')}
         </div>
-        <div style="margin-top:10px;font-size:12px;color:var(--red);font-weight:600">
-          Auto-charged: ${o.autoCharge.desc} — ${fmt(o.autoCharge.amt)}
-        </div>
       </div>
-    </div>`;}).join('')}`;
+    </div>`;
+  }).join('');
+}
+
+async function sbMarkOrderStatus(orderId, newStatus){
+  const {error} = await sb.from('orders').update({status:newStatus, updated_at:new Date().toISOString()}).eq('id',orderId);
+  if(error){showToast('⚠ '+error.message);return;}
+  showToast(`✓ Order ${orderId} → ${newStatus.replace('_',' ')}`);
+  // Update local cache and re-render
+  const o = _sbOrders.find(x=>x.id===orderId);
+  if(o) o.status=newStatus;
+  renderOrdersPage(_sbOrders);
+}
+
+function pgMyOrders(){
+  const isStaff = role==='employee'||role==='admin';
+
+  // Load from Supabase after render
+  setTimeout(async()=>{
+    const wrap = document.getElementById('ordersPageWrap');
+    if(wrap) wrap.innerHTML=`<div style="padding:40px;text-align:center;color:var(--ink3)"><span style="animation:spin 1s linear infinite;display:inline-block">⏳</span> Loading orders…</div>`;
+    _sbOrders = await loadOrdersFromSb();
+    renderOrdersPage(_sbOrders);
+  }, 100);
+
+  return `
+  <div class="pg-head" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div>
+      <div class="pg-title">${isStaff?'All Orders':'My Orders'}</div>
+      <div class="pg-sub">${isStaff?'All customer outbound orders — live from Supabase':'Your outbound orders — real-time status'}</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      ${!isStaff?`<button class="btn btn-red" onclick="showPage('placeorder')">${ico('plus',13)} Place New Order</button>`:''}
+      <button class="btn" onclick="reloadOrders()">↻ Refresh</button>
+    </div>
+  </div>
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat"><div class="stat-lbl">Pending</div><div class="stat-val" id="oStatPending">—</div><span class="tag to">Awaiting processing</span></div>
+    <div class="stat"><div class="stat-lbl">Processed</div><div class="stat-val" id="oStatProcessed">—</div><span class="tag tb">Ready for pickup</span></div>
+    <div class="stat"><div class="stat-lbl">Picked Up</div><div class="stat-val" id="oStatDone">—</div><span class="tag tg">Completed</span></div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+    <input type="text" id="ordersSearch" placeholder="Search order ID, channel…"
+      oninput="renderOrdersPage(_sbOrders)"
+      style="flex:1;min-width:160px;padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-family:Barlow,sans-serif;font-size:13px"/>
+    <select id="ordersStatusFilter" onchange="renderOrdersPage(_sbOrders)"
+      style="padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-family:Barlow,sans-serif;font-size:13px">
+      <option value="all">All Statuses</option>
+      <option value="pending">Pending</option>
+      <option value="processed">Processed</option>
+      <option value="picked_up">Picked Up</option>
+    </select>
+  </div>
+  <div id="ordersPageWrap"></div>`;
+}
+
+async function reloadOrders(){
+  const wrap = document.getElementById('ordersPageWrap');
+  if(wrap) wrap.innerHTML=`<div style="padding:40px;text-align:center;color:var(--ink3)"><span style="animation:spin 1s linear infinite;display:inline-block">⏳</span> Loading…</div>`;
+  _sbOrders = await loadOrdersFromSb();
+  renderOrdersPage(_sbOrders);
 }
 
 // ── TASK ASSIGNMENT HELPERS ──
