@@ -678,12 +678,9 @@ function empBadge(empId,size=24){
 }
 
 const CUSTOMERS=[
-  {id:'platinum',name:'Platinum Financial Group',initials:'PF',trucks:3,pallets:68,units:12155,active:true,balance:2977.75,
+  {id:'platinum',name:'Platinum Financial Group, Inc.',initials:'PF',trucks:3,pallets:68,units:12155,active:true,balance:2977.75,
    contact:'Alex Reyna',email:'alex@platinumfg.com',phone:'+1 (713) 555-0192',whatsapp:'+1 (713) 555-0192',
    rateNote:'Custom rate: $5/pallet receive & ship (high volume)'},
-  {id:'meridian',name:'Meridian Retail Co.',initials:'MR',trucks:1,pallets:12,units:2400,active:true,balance:0,
-   contact:'Sandra Kim',email:'sandra@meridianretail.com',phone:'+1 (972) 555-0347',whatsapp:'+1 (972) 555-0347',
-   rateNote:'Standard rates apply'},
   {id:'horizon',name:'Horizon Goods',initials:'HG',trucks:0,pallets:0,units:0,active:false,balance:0,
    contact:'Marcus Webb',email:'marcus@horizongoods.com',phone:'+1 (214) 555-0581',whatsapp:'',
    rateNote:'Standard rates apply'},
@@ -724,7 +721,6 @@ function fmt(n){return '$'+Number(n).toLocaleString('en-US',{minimumFractionDigi
 // ── CUSTOMER RATE OVERRIDES ──
 const CUSTOMER_RATES={
   platinum:{receiving_pallet:5,outbound_pallet:5,receiving_pallet_oversized:22,outbound_pallet_oversized:22},
-  meridian:{},
   horizon:{},
 };
 function getRate(customerId,key){
@@ -736,7 +732,7 @@ function getRate(customerId,key){
 let ORDERS=[
   {id:'ORD-1001',customer:'Platinum Financial Group',custId:'platinum',type:'pallet_out',status:'pending',date:'2026-03-06',time:'9am',pallets:[{num:2,loc:'AA05-B',desc:'Mainstays — 84" Blackout Panel Pair',units:210},{num:3,loc:'AA06-A',desc:'Mainstays — 84" Blackout Panel Pair',units:210}],notes:'Truck arrives at 9am sharp',label:null,channel:'Amazon',assignedTo:'emp_marco',autoCharge:{desc:'Outbound — 2 Pallets (ORD-1001)',qty:2,rate:5,amt:10}},
   {id:'ORD-1002',customer:'Platinum Financial Group',custId:'platinum',type:'fbm',status:'processed',date:'2026-03-06',time:'11am',pallets:[],items:[{sku:'0676499993',desc:'Ladies Core Crew Tee',qty:3}],notes:'',label:'label-1002.pdf',channel:'Amazon',assignedTo:'emp_dani',autoCharge:{desc:'Pick & Pack — 1 Order (ORD-1002)',qty:1,rate:2.50,amt:2.50}},
-  {id:'ORD-1003',customer:'Meridian Retail Co.',custId:'meridian',type:'fbm',status:'picked_up',date:'2026-03-06',time:'1pm',pallets:[],items:[{sku:'675855854',desc:'TT Tiered Knit Dress',qty:5}],notes:'eBay order',label:'label-1003.pdf',channel:'eBay',assignedTo:'emp_dani',autoCharge:{desc:'Pick & Pack — 1 Order (ORD-1003)',qty:1,rate:2.50,amt:2.50}},
+  {id:'ORD-1003',customer:'Platinum Financial Group, Inc.',custId:'platinum',type:'fbm',status:'picked_up',date:'2026-03-06',time:'1pm',pallets:[],items:[{sku:'675855854',desc:'TT Tiered Knit Dress',qty:5}],notes:'eBay order',label:'label-1003.pdf',channel:'eBay',assignedTo:'emp_dani',autoCharge:{desc:'Pick & Pack — 1 Order (ORD-1003)',qty:1,rate:2.50,amt:2.50}},
   {id:'ORD-1004',customer:'Platinum Financial Group',custId:'platinum',type:'fba',status:'pending',date:'2026-03-07',time:'11am',pallets:[{num:38,loc:'BB09-A',desc:'Ladies — Flower Jacquard Cardigan',units:312}],notes:'Ship to Amazon FBA — DFW2',label:null,channel:'Amazon FBA',assignedTo:null,autoCharge:{desc:'FBA Prep — 312 Units (ORD-1004)',qty:312,rate:0.75,amt:234}},
   {id:'ORD-1005',customer:'Platinum Financial Group',custId:'platinum',type:'pallet_out',status:'pending',date:'2026-03-07',time:'3pm',pallets:[{num:35,loc:'AA28-A',desc:'Mainstays — Outdoor Rug',units:22}],notes:'',label:null,channel:'Personal Store',assignedTo:null,autoCharge:{desc:'Outbound — 1 Pallet (ORD-1005)',qty:1,rate:5,amt:5}},
 ];
@@ -3252,8 +3248,8 @@ let INVENTORY=[
   {id:'AA07-B',palletNum:6,custId:'platinum',customer:'Platinum Financial Group',sku:'0676499993',desc:'Ladies Core Crew Tee — Relaxed Fit (Pink Smoke / L)',fullCases:47,cp:24,openCase:true,loosePicked:13,received:'Feb 2, 2026',receivedDate:'2026-02-02'},
   {id:'AA11-B',palletNum:14,custId:'platinum',customer:'Platinum Financial Group',sku:'mixed',desc:'Mixed — Sheet Set, Extension Cords, Tees, Giant Jar',fullCases:41,cp:6,openCase:false,loosePicked:0,received:'Feb 2, 2026',receivedDate:'2026-02-02'},
   {id:'AA28-A',palletNum:35,custId:'platinum',customer:'Platinum Financial Group',sku:'',desc:'Mainstays — 7ft x 10ft Outdoor Rug (Black & White)',fullCases:1,cp:1,openCase:false,loosePicked:0,received:'Feb 2, 2026',receivedDate:'2026-02-02'},
-  {id:'AA16-A',palletNum:23,custId:'meridian',customer:'Meridian Retail Co.',sku:'',desc:"New Balance — Men's Jogger + LS Hoodie",fullCases:40,cp:1,openCase:false,loosePicked:0,received:'Feb 4, 2026',receivedDate:'2026-02-04'},
-  {id:'BB14-A',palletNum:45,custId:'meridian',customer:'Meridian Retail Co.',sku:'665273897',desc:'Active Wear Legging + Missy Oversized BF Shirt',fullCases:55,cp:1,openCase:false,loosePicked:0,received:'Feb 4, 2026',receivedDate:'2026-02-04'},
+  {id:'AA16-A',palletNum:23,custId:'platinum',customer:'Platinum Financial Group, Inc.',sku:'',desc:"New Balance — Men's Jogger + LS Hoodie",fullCases:40,cp:1,openCase:false,loosePicked:0,received:'Feb 4, 2026',receivedDate:'2026-02-04'},
+  {id:'BB14-A',palletNum:45,custId:'platinum',customer:'Platinum Financial Group, Inc.',sku:'665273897',desc:'Active Wear Legging + Missy Oversized BF Shirt',fullCases:55,cp:1,openCase:false,loosePicked:0,received:'Feb 4, 2026',receivedDate:'2026-02-04'},
   {id:'B04-A',palletNum:37,custId:'platinum',customer:'Platinum Financial Group',sku:'675855854',desc:"Ladies — TT Tiered Knit Dress + Fleece Sweatpant",fullCases:81,cp:1,openCase:false,loosePicked:0,received:'Feb 10, 2026',receivedDate:'2026-02-10'},
   {id:'BB09-A',palletNum:38,custId:'platinum',customer:'Platinum Financial Group',sku:'676282460',desc:'Ladies — Flower Jacquard Cardigan',fullCases:26,cp:12,openCase:false,loosePicked:0,received:'Feb 10, 2026',receivedDate:'2026-02-10'},
 ];
@@ -3797,14 +3793,14 @@ let _timerInterval=null;
 let PERF_LOG=[
   {orderId:'ORD-0990',empId:'emp_jose',type:'pallet_out',pts:3,benchmarkMins:15,actualMins:12,date:'2026-03-07',customer:'Platinum Financial Group'},
   {orderId:'ORD-0991',empId:'emp_dani',type:'pickpack',pts:1,benchmarkMins:8,actualMins:6,date:'2026-03-07',customer:'Platinum Financial Group'},
-  {orderId:'ORD-0992',empId:'emp_dani',type:'pickpack',pts:1,benchmarkMins:8,actualMins:9,date:'2026-03-07',customer:'Meridian Retail Co.'},
+  {orderId:'ORD-0992',empId:'emp_dani',type:'pickpack',pts:1,benchmarkMins:8,actualMins:9,date:'2026-03-07',customer:'Platinum Financial Group, Inc.'},
   {orderId:'ORD-0993',empId:'emp_mike',type:'fba',pts:4,benchmarkMins:25,actualMins:22,date:'2026-03-07',customer:'Platinum Financial Group'},
   {orderId:'ORD-0994',empId:'emp_jose',type:'pickpack',pts:1,benchmarkMins:8,actualMins:7,date:'2026-03-07',customer:'Platinum Financial Group'},
   {orderId:'ORD-0995',empId:'emp_sara',type:'fba',pts:5,benchmarkMins:25,actualMins:31,date:'2026-03-07',customer:'Platinum Financial Group'},
-  {orderId:'ORD-0996',empId:'emp_mike',type:'pallet_out',pts:3,benchmarkMins:15,actualMins:14,date:'2026-03-07',customer:'Meridian Retail Co.'},
+  {orderId:'ORD-0996',empId:'emp_mike',type:'pallet_out',pts:3,benchmarkMins:15,actualMins:14,date:'2026-03-07',customer:'Platinum Financial Group, Inc.'},
   {orderId:'ORD-0997',empId:'emp_jose',type:'fba',pts:4,benchmarkMins:25,actualMins:19,date:'2026-03-07',customer:'Platinum Financial Group'},
   {orderId:'ORD-0998',empId:'emp_dani',type:'pallet_out',pts:3,benchmarkMins:15,actualMins:17,date:'2026-03-07',customer:'Platinum Financial Group'},
-  {orderId:'ORD-0999',empId:'emp_sara',type:'pickpack',pts:1,benchmarkMins:8,actualMins:5,date:'2026-03-07',customer:'Meridian Retail Co.'},
+  {orderId:'ORD-0999',empId:'emp_sara',type:'pickpack',pts:1,benchmarkMins:8,actualMins:5,date:'2026-03-07',customer:'Platinum Financial Group, Inc.'},
 ];
 
 function startTimer(orderId){
@@ -5890,7 +5886,7 @@ function pgReports(){
 
   const custRevenue=[
     {name:'Platinum Financial Group',rev:87400,pct:52,orders:183,color:'var(--red)'},
-    {name:'Meridian Distribution',rev:41200,pct:25,orders:97,color:'var(--blue)'},
+    {name:'Platinum Financial Group',rev:41200,pct:25,orders:97,color:'var(--blue)'},
     {name:'Horizon Goods',rev:22600,pct:13,orders:54,color:'var(--green)'},
     {name:'Other',rev:16800,pct:10,orders:28,color:'var(--ink3)'},
   ];
@@ -6011,7 +6007,7 @@ function pgReports(){
       ${[
         {label:'Total Pallet Capacity',used:214,total:246,unit:'pallets'},
         {label:'Platinum Financial',used:142,total:200,unit:'pallets'},
-        {label:'Meridian Distribution',used:48,total:100,unit:'pallets'},
+        {label:'Platinum Financial Group',used:48,total:100,unit:'pallets'},
         {label:'Horizon Goods',used:24,total:60,unit:'pallets'},
       ].map(s=>{
         const pct=Math.round(s.used/s.total*100);
