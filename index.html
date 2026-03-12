@@ -9,19 +9,23 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --red:#e8241a;--red2:#c01e15;--red-light:#fdf0ef;
-  --ink:#111111;--ink2:#3a3a3a;--ink3:#888;
-  --bg:#f6f5f2;--surface:#fff;--surface2:#f0eeea;
-  --border:#e2dfd8;--border2:#ccc9c0;
-  --gold:#b8913a;--gold-light:#f7f0e3;
-  --green:#1e7a4f;--green-bg:#e6f4ed;
-  --blue:#1a4fc0;--blue-bg:#e8edf9;
-  --orange:#c07020;--orange-bg:#faf0e3;
-  --shadow:0 2px 8px rgba(17,17,17,0.07),0 1px 2px rgba(17,17,17,0.04);
-  --shadow-lg:0 8px 32px rgba(17,17,17,0.12);
-  --r:10px;--r-sm:7px;
+  /* ── BRAND ── */
+  --red:#e8241a;--red2:#c01e15;--red-light:#fff0ef;
+  /* ── NEUTRALS — true black/white, no warm bias ── */
+  --ink:#0d0d0d;--ink2:#404040;--ink3:#888;--ink4:#bbb;
+  --bg:#f4f4f4;--surface:#ffffff;--surface2:#f9f9f9;
+  --border:#e8e8e8;--border2:#d4d4d4;
+  /* ── SEMANTIC ── */
+  --gold:#a07828;--gold-light:#faf3e0;
+  --green:#166e3e;--green-bg:#e8f5ee;
+  --blue:#1547b0;--blue-bg:#e8eef9;
+  --orange:#b86010;--orange-bg:#fef3e8;
+  /* ── SHADOWS — crisper, less diffuse ── */
+  --shadow:0 1px 4px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg:0 8px 28px rgba(0,0,0,0.14);
+  --r:8px;--r-sm:6px;
 }
-body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;min-height:100vh}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased}
 
 /* ── LOGIN ── */
 #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--ink);position:relative;overflow:hidden}
@@ -64,16 +68,17 @@ header{background:var(--ink);height:58px;display:flex;align-items:center;justify
 
 /* ── LAYOUT ── */
 .shell{display:flex;flex:1}
-nav{width:208px;background:var(--surface);border-right:1px solid var(--border);padding:18px 0;flex-shrink:0;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto}
-.nav-sec{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);font-weight:700;padding:14px 18px 5px;margin-top:6px}
+nav{width:216px;background:var(--surface);border-right:1px solid var(--border);padding:16px 0;flex-shrink:0;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto;overflow-x:hidden}
+.nav-sec{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);font-weight:700;padding:14px 16px 5px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nav-sec:first-child{margin-top:0}
-.nv{display:flex;align-items:center;gap:9px;padding:9px 18px;font-size:13px;font-weight:500;color:var(--ink2);cursor:pointer;transition:all 0.12s;border-left:3px solid transparent}
+.nv{display:flex;align-items:center;gap:9px;padding:8px 16px;font-size:13px;font-weight:500;color:var(--ink2);cursor:pointer;transition:all 0.1s;border-left:3px solid transparent;overflow:hidden;min-width:0}
 .nv:hover{background:var(--bg);color:var(--ink)}
 .nv.on{background:var(--red-light);color:var(--red);border-left-color:var(--red);font-weight:700}
 .nv svg{width:14px;height:14px;opacity:0.5;flex-shrink:0}
 .nv.on svg{opacity:1}
+.nv span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 
-main{flex:1;padding:28px 32px 60px;overflow-x:hidden;min-width:0}
+main{flex:1;padding:24px 28px 60px;overflow-x:hidden;min-width:0}
 .page{animation:fadeUp 0.25s ease both}
 
 /* ── COMMON ── */
@@ -82,12 +87,12 @@ main{flex:1;padding:28px 32px 60px;overflow-x:hidden;min-width:0}
 .pg-sub{color:var(--ink3);font-size:13px;margin-top:3px;font-weight:400}
 
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
-.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow);animation:fadeUp 0.4s ease both;transition:transform 0.15s}
-.stat:hover{transform:translateY(-2px)}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow);animation:fadeUp 0.4s ease both;transition:transform 0.15s,box-shadow 0.15s;overflow:hidden}
+.stat:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
 .stat:nth-child(1){animation-delay:.04s}.stat:nth-child(2){animation-delay:.08s}.stat:nth-child(3){animation-delay:.12s}.stat:nth-child(4){animation-delay:.16s}
-.stat-lbl{font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink3);font-weight:700;margin-bottom:8px}
-.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:38px;font-weight:800;line-height:1;margin-bottom:7px;letter-spacing:-0.5px}
-.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:4px;letter-spacing:0.2px}
+.stat-lbl{font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink3);font-weight:700;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:800;line-height:1;margin-bottom:6px;letter-spacing:-0.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:0.2px;white-space:nowrap;overflow:hidden;max-width:100%;text-overflow:ellipsis;vertical-align:middle}
 .tg{background:var(--green-bg);color:var(--green)}
 .tr{background:var(--red-light);color:var(--red)}
 .tb{background:var(--blue-bg);color:var(--blue)}
@@ -95,50 +100,51 @@ main{flex:1;padding:28px 32px 60px;overflow-x:hidden;min-width:0}
 .tgd{background:var(--gold-light);color:var(--gold)}
 .dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
 
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:18px}
-.card-head{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
-.card-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px}
-.btn{font-size:12px;color:var(--ink2);border:1px solid var(--border);border-radius:5px;padding:5px 13px;background:none;font-family:'Barlow',sans-serif;font-weight:600;cursor:pointer;transition:all 0.12s}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+.card-head{padding:12px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px;min-width:0}
+.card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn{font-size:12px;color:var(--ink2);border:1px solid var(--border2);border-radius:5px;padding:5px 12px;background:none;font-family:'Barlow',sans-serif;font-weight:600;cursor:pointer;transition:all 0.1s;white-space:nowrap}
 .btn:hover:not(.on){background:var(--bg)}
 .btn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .btn-red{background:var(--red);color:#fff;border-color:var(--red)}
-.btn-red:hover{background:var(--red2);transform:translateY(-1px)}
+.btn-red:hover{background:var(--red2)}
 
-.tbar{padding:10px 18px;background:var(--bg);border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.sw{position:relative;flex:1;min-width:150px}
+.tbar{padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sw{position:relative;flex:1;min-width:140px}
 .sw svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:13px;height:13px;stroke:var(--ink3);fill:none;stroke-width:2}
-.si{width:100%;padding:7px 10px 7px 28px;border:1px solid var(--border);border-radius:6px;font-family:'Barlow',sans-serif;font-size:13px;background:var(--surface);color:var(--ink);outline:none;transition:border 0.12s}
+.si{width:100%;padding:7px 10px 7px 28px;border:1px solid var(--border);border-radius:6px;font-family:'Barlow',sans-serif;font-size:13px;background:var(--surface);color:var(--ink);outline:none;transition:border 0.1s}
 .si:focus{border-color:var(--red)}
 
 table{width:100%;border-collapse:collapse}
-thead th{padding:9px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink3);font-weight:700;background:var(--bg);border-bottom:1px solid var(--border);white-space:nowrap}
+thead th{padding:9px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink3);font-weight:700;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s}
 tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:#faf9f7}
-td{padding:10px 14px;vertical-align:middle;font-size:13px}
-.tfoot{padding:10px 18px;background:var(--bg);border-top:1px solid var(--border);font-size:12px;color:var(--ink3);display:flex;align-items:center;justify-content:space-between}
+tbody tr:hover{background:var(--surface2)}
+td{padding:10px 14px;vertical-align:middle;font-size:13px;max-width:280px;overflow:hidden;text-overflow:ellipsis}
+td.wrap{white-space:normal;max-width:none}
+.tfoot{padding:10px 16px;background:var(--surface2);border-top:1px solid var(--border);font-size:12px;color:var(--ink3);display:flex;align-items:center;justify-content:space-between}
 .mono{font-family:monospace;font-size:11px;color:var(--ink3);font-weight:600}
 
 /* ── TRUCK ── */
 .tg-wrap{padding:0}
 .tg{margin-bottom:20px}
-.tg-head{background:var(--ink);color:#fff;border-radius:var(--r) var(--r) 0 0;padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.tg-name{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;letter-spacing:0.5px}
+.tg-head{background:var(--ink);color:#fff;border-radius:var(--r) var(--r) 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.tg-name{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;letter-spacing:0.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tg-meta{font-size:11px;color:rgba(255,255,255,0.45);margin-top:1px}
 .tg-body{border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r) var(--r);overflow:hidden}
 .plt{border-bottom:1px solid var(--border)}
 .plt:last-child{border-bottom:none}
-.plt-head{padding:9px 18px;background:var(--surface2);display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.12s;flex-wrap:wrap}
-.plt-head:hover{background:#e6e2da}
-.plt-num{font-size:10px;font-weight:800;color:var(--ink);background:var(--border2);border-radius:4px;padding:2px 8px;letter-spacing:0.3px}
-.plt-loc{font-size:12px;font-weight:700;color:var(--red)}
-.plt-cnt{font-size:11px;color:var(--ink3);margin-left:auto}
+.plt-head{padding:9px 16px;background:var(--surface2);display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.1s;flex-wrap:wrap}
+.plt-head:hover{background:var(--border)}
+.plt-num{font-size:10px;font-weight:800;color:var(--ink);background:var(--border2);border-radius:4px;padding:2px 8px;letter-spacing:0.3px;white-space:nowrap}
+.plt-loc{font-size:12px;font-weight:700;color:var(--red);white-space:nowrap}
+.plt-cnt{font-size:11px;color:var(--ink3);margin-left:auto;white-space:nowrap}
 .plt-chev{width:14px;height:14px;fill:none;stroke:var(--ink3);stroke-width:2.5;transition:transform 0.2s;flex-shrink:0}
 .plt-chev.open{transform:rotate(180deg)}
 .plt-body{display:none;overflow-x:auto}
 .plt-body.open{display:block}
-.orig-tx{background:#fff3e8;color:#c07020;border-radius:4px;padding:2px 9px;font-size:10px;font-weight:700}
-.orig-ar{background:#e8edf9;color:var(--blue);border-radius:4px;padding:2px 9px;font-size:10px;font-weight:700}
+.orig-tx{background:#fff3e8;color:#b05a0a;border-radius:4px;padding:2px 9px;font-size:10px;font-weight:700;white-space:nowrap}
+.orig-ar{background:var(--blue-bg);color:var(--blue);border-radius:4px;padding:2px 9px;font-size:10px;font-weight:700;white-space:nowrap}
 
 /* ── UPC ── */
 .qb-wrap{display:flex;align-items:center;gap:8px}
@@ -224,44 +230,43 @@ td{padding:10px 14px;vertical-align:middle;font-size:13px}
 .modal-actions{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;background:var(--bg)}
 
 /* ── EMPLOYEE FORM ── */
-.fsec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--shadow);margin-bottom:16px}
-.fsec-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink2);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.fsec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--shadow);margin-bottom:14px}
+.fsec-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink2);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
 .fg3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .fg2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.fg3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .fg4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.field{display:flex;flex-direction:column;gap:4px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
 .field.full{grid-column:1/-1}
-.field label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink2)}
-.field input,.field select,.field textarea{padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--ink);background:var(--surface);outline:none;transition:border 0.12s}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--red)}
-.field textarea{resize:vertical;min-height:64px}
-.prow{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px}
-.irow{background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:12px;margin-bottom:8px;position:relative}
+.field label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.field input,.field select,.field textarea{padding:7px 10px;border:1px solid var(--border2);border-radius:5px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--ink);background:var(--surface);outline:none;transition:border 0.1s;min-width:0;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(232,36,26,0.08)}
+.field textarea{resize:vertical;min-height:60px}
+.prow{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:12px;margin-bottom:10px}
+.irow{background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:12px;margin-bottom:8px;position:relative}
 .irow-n{position:absolute;top:7px;right:10px;font-size:10px;font-weight:800;color:var(--ink3);background:var(--border);border-radius:3px;padding:1px 6px;text-transform:uppercase;letter-spacing:0.5px}
-.add-btn{width:100%;padding:10px;border:2px dashed var(--border2);border-radius:7px;background:none;font-family:'Barlow',sans-serif;font-size:12px;font-weight:700;color:var(--ink3);cursor:pointer;transition:all 0.12s;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:5px;text-transform:uppercase;letter-spacing:0.3px}
+.add-btn{width:100%;padding:9px;border:2px dashed var(--border2);border-radius:6px;background:none;font-family:'Barlow',sans-serif;font-size:12px;font-weight:700;color:var(--ink3);cursor:pointer;transition:all 0.1s;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:5px;text-transform:uppercase;letter-spacing:0.3px}
 .add-btn:hover{border-color:var(--red);color:var(--red)}
-.submit-btn{padding:12px 28px;background:var(--red);color:#fff;border:none;border-radius:7px;font-family:'Barlow',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;text-transform:uppercase;letter-spacing:0.5px}
-.submit-btn:hover{background:var(--red2);transform:translateY(-1px)}
-.upzone{border:2px dashed var(--border2);border-radius:7px;padding:16px;text-align:center;cursor:pointer;transition:all 0.12s;background:var(--bg)}
+.submit-btn{padding:11px 26px;background:var(--red);color:#fff;border:none;border-radius:6px;font-family:'Barlow',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background 0.15s;text-transform:uppercase;letter-spacing:0.5px}
+.submit-btn:hover{background:var(--red2)}
+.upzone{border:2px dashed var(--border2);border-radius:6px;padding:14px;text-align:center;cursor:pointer;transition:all 0.1s;background:var(--surface2)}
 .upzone:hover{border-color:var(--red);background:var(--red-light)}
 .upzone input{display:none}
-.upzone-txt{font-size:12px;color:var(--ink3);margin-top:5px;font-weight:500}
-.up-files{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
-.up-file{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:3px 9px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px}
+.upzone-txt{font-size:12px;color:var(--ink3);margin-top:4px;font-weight:500}
+.up-files{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.up-file{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px}
 .up-rm{cursor:pointer;color:var(--red)}
 
 /* ── ADMIN ── */
-.cust-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;transition:all 0.15s;cursor:pointer;flex-wrap:wrap;gap:10px}
+.cust-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;transition:all 0.15s;cursor:pointer;flex-wrap:wrap;gap:10px}
 .cust-card:hover{border-color:var(--red);transform:translateY(-1px)}
-.cust-left{display:flex;align-items:center;gap:12px}
-.cust-av{width:40px;height:40px;border-radius:8px;background:var(--ink);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:16px;color:#fff;font-weight:800;flex-shrink:0}
-.cust-name{font-size:14px;font-weight:700}
-.cust-meta{font-size:11px;color:var(--ink3);margin-top:1px}
-.cust-stats{display:flex;gap:18px;flex-wrap:wrap}
+.cust-left{display:flex;align-items:center;gap:12px;min-width:0}
+.cust-av{width:38px;height:38px;border-radius:7px;background:var(--ink);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:15px;color:#fff;font-weight:800;flex-shrink:0}
+.cust-name{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cust-meta{font-size:11px;color:var(--ink3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cust-stats{display:flex;gap:16px;flex-wrap:wrap}
 .cv{text-align:right}
-.cv-val{font-size:15px;font-weight:800}
-.cv-lbl{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.5px;font-weight:700}
+.cv-val{font-size:15px;font-weight:800;white-space:nowrap}
+.cv-lbl{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;white-space:nowrap}
 
 .two-col{display:grid;grid-template-columns:1fr 310px;gap:18px;align-items:start}
 
@@ -317,20 +322,20 @@ td{padding:10px 14px;vertical-align:middle;font-size:13px}
 
 /* ── DISPATCH ── */
 .dispatch-date-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
-.dtab{padding:8px 18px;border:2px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all 0.15s;background:var(--surface)}
+.dtab{padding:7px 16px;border:2px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;transition:all 0.1s;background:var(--surface);white-space:nowrap}
 .dtab:hover{border-color:var(--red)}
 .dtab.on{border-color:var(--red);background:var(--red);color:#fff}
-.slot-group{margin-bottom:22px}
-.slot-head{background:var(--ink);color:#fff;border-radius:8px 8px 0 0;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;letter-spacing:0.5px;display:flex;align-items:center;justify-content:space-between}
-.slot-body{border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;overflow:hidden}
-.dispatch-row{padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap;transition:background 0.1s}
+.slot-group{margin-bottom:20px}
+.slot-head{background:var(--ink);color:#fff;border-radius:7px 7px 0 0;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;letter-spacing:0.5px;display:flex;align-items:center;justify-content:space-between}
+.slot-body{border:1px solid var(--border);border-top:none;border-radius:0 0 7px 7px;overflow:hidden}
+.dispatch-row{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap;transition:background 0.1s}
 .dispatch-row:last-child{border-bottom:none}
-.dispatch-row:hover{background:var(--bg)}
-.dr-customer{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--red)}
-.dr-id{font-size:13px;font-weight:700}
-.dr-desc{font-size:12px;color:var(--ink2);margin-top:1px}
+.dispatch-row:hover{background:var(--surface2)}
+.dr-customer{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--red);white-space:nowrap}
+.dr-id{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dr-desc{font-size:12px;color:var(--ink2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dr-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.act-btn{padding:7px 14px;border:none;border-radius:6px;font-family:'Barlow',sans-serif;font-size:11px;font-weight:800;cursor:pointer;transition:all 0.15s;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap}
+.act-btn{padding:6px 12px;border:none;border-radius:5px;font-family:'Barlow',sans-serif;font-size:11px;font-weight:800;cursor:pointer;transition:all 0.1s;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap}
 .act-process{background:var(--blue-bg);color:var(--blue)}
 .act-process:hover{background:var(--blue);color:#fff}
 .act-pickup{background:var(--green-bg);color:var(--green)}
@@ -357,10 +362,10 @@ td{padding:10px 14px;vertical-align:middle;font-size:13px}
   .stats{grid-template-columns:repeat(2,1fr)}
   .two-col,.billing-grid{grid-template-columns:1fr}
   nav{display:none}
-  main{padding:16px 14px 40px}
+  main{padding:14px 12px 40px}
   .fg4{grid-template-columns:repeat(2,1fr)}
   .fg3{grid-template-columns:repeat(2,1fr)}
-  .inv-doc{padding:24px 20px}
+  .inv-doc{padding:20px 16px}
   .inv-addresses{grid-template-columns:1fr}
 }
 
@@ -2585,237 +2590,362 @@ let selTime=null;
 let selChannel=null;
 
 function pgPlaceOrder(){
-  const custRate=getRate('platinum','outbound_pallet');
-  const header = `
+  setTimeout(()=>{ initOrderForm(); }, 80);
+  return `
   <div class="pg-head">
     <div class="pg-title">Place an Order</div>
-    <div class="pg-sub">Request a pallet pickup, pick & pack an order, or prep FBA inventory</div>
+    <div class="pg-sub">Submit a fulfillment request — we ship within 24–48 hours (72 hr max)</div>
   </div>
-  <div class="order-type-grid">
+
+  <!-- ORDER TYPE SELECTOR -->
+  <div class="order-type-grid" style="margin-bottom:24px">
     ${[
-      {id:'pallet_out',icon:'🚚',name:'Pallet Outbound',desc:'Book a truck pickup for full pallets'},
-      {id:'pickpack',icon:'📦',name:'Pick & Pack',desc:'We pick, pack & ship your orders — any marketplace or channel'},
-      {id:'fba',icon:'🏭',name:'FBA Shipment',desc:'Prep & send inventory to Amazon warehouse'},
-      {id:'marketplace',icon:'🛒',name:'Marketplace Order',desc:'Connect your store — Walmart, eBay & more coming soon'},
+      {id:'pallet_out', icon:'🚚', name:'Pallet Outbound',    desc:'Ship full pallets out of our warehouse'},
+      {id:'pickpack',   icon:'📦', name:'Pick & Pack',         desc:'We pick, pack & ship individual orders'},
+      {id:'fba',        icon:'🏭', name:'FBA Shipment',        desc:'Prep & send inventory into Amazon'},
+      {id:'marketplace',icon:'🛒', name:'Marketplace Order',   desc:'Walmart, eBay, Shopify & more'},
     ].map(t=>`
-    <div class="ot-card ${selOrderType===t.id?'sel':''}" onclick="setOrderType('${t.id}')">
+    <div class="ot-card" id="ot_${t.id}" onclick="selectOrderType('${t.id}')">
       <div class="ot-icon">${t.icon}</div>
       <div class="ot-name">${t.name}</div>
       <div class="ot-desc">${t.desc}</div>
     </div>`).join('')}
-  </div>`;
-  const palletOutForm = `
-  <!-- PALLET OUTBOUND FORM -->
-  <div class="order-form ${selOrderType==='pallet_out'?'open':''}" id="form-pallet_out">
-    <div class="card">
-      <div class="card-head"><span class="card-title">🚚 Pallet Outbound — Book Pickup</span></div>
-      <div style="padding:20px">
-        <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);margin-bottom:10px">Select Pallets to Ship Out</div>
-        <div class="pallet-sel-grid" id="palletSelGrid">
-          ${PALLETS.filter(p=>p.truck).map(p=>`
-          <div class="psel ${selPallets.includes(p.num)?'sel':''}" onclick="togglePalletSel(${p.num},this)">
-            <div class="psel-check">${selPallets.includes(p.num)?'✓':''}</div>
-            <div class="psel-info">
-              <div class="psel-loc">📍 ${p.loc} · Pallet ${p.num}</div>
-              <div class="psel-desc">${p.items[0].desc}${p.items.length>1?` +${p.items.length-1} more`:''}</div>
-              <div class="psel-units">${p.items.reduce((s,i)=>s+i.units,0).toLocaleString()} units</div>
+  </div>
+
+  <!-- FORM AREA — shown after type selected -->
+  <div id="orderFormArea"></div>`;
+}
+
+// ── STATE ──
+let _oType=null, _oCarrier=null, _oScheduled=false;
+
+function initOrderForm(){
+  if(selOrderType){ selectOrderType(selOrderType); }
+}
+
+function selectOrderType(type){
+  _oType=type; selOrderType=type;
+  // highlight selected card
+  document.querySelectorAll('.ot-card').forEach(c=>c.classList.remove('sel'));
+  const card=document.getElementById('ot_'+type);
+  if(card) card.classList.add('sel');
+  renderOrderForm(type);
+}
+
+function renderOrderForm(type){
+  const wrap=document.getElementById('orderFormArea');
+  if(!wrap) return;
+  if(type==='marketplace'){
+    wrap.innerHTML=`<div class="card" style="padding:32px;text-align:center">
+      <div style="font-size:48px;margin-bottom:16px">🔌</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;text-transform:uppercase;margin-bottom:8px">Store Integrations Coming Soon</div>
+      <div style="font-size:13px;color:var(--ink3);max-width:400px;margin:0 auto 20px">Connect Walmart, eBay, Shopify and more — orders will flow in automatically.</div>
+      <button class="btn btn-red" onclick="selectOrderType('pickpack')">📦 Use Pick & Pack Instead</button>
+    </div>`;
+    return;
+  }
+  wrap.innerHTML = buildOrderForm(type);
+  // reset carrier state
+  _oCarrier=null; _oScheduled=false;
+}
+
+function buildOrderForm(type){
+  const titles={pallet_out:'🚚 Pallet Outbound',pickpack:'📦 Pick & Pack',fba:'🏭 FBA Shipment'};
+  return `<div class="card">
+    <div class="card-head"><span class="card-title">${titles[type]||type}</span></div>
+    <div style="padding:20px" id="innerForm">
+
+      ${type==='pickpack'?pickpackFields():''}
+      ${type==='fba'?fbaTopFields():''}
+      ${type==='pallet_out'?palletFields():''}
+
+      <!-- SHIPPING METHOD -->
+      <div style="margin-top:20px">
+        <div class="form-section-label">Shipping Method</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap" id="carrierBtns">
+          ${['FedEx','UPS','USPS','Other Carrier / Broker / Freight'].map(c=>`
+          <div class="ch-btn" onclick="selectCarrier(this,'${c}')">${c}</div>`).join('')}
+        </div>
+      </div>
+
+      <!-- SCHEDULED PICKUP — shown only for non-big-three or FBA freight -->
+      <div id="scheduledSection" style="display:none;margin-top:16px">
+        <div class="form-section-label">Pickup Appointment</div>
+        <div class="fg2">
+          <div class="field"><label>Date</label><input type="date" id="pickupDate" min="${new Date().toISOString().split('T')[0]}"/></div>
+          <div class="field"><label>Time Slot</label>
+            <div class="time-slots">
+              ${['9am–11am','11am–1pm','1pm–3pm','3pm–5pm'].map(t=>`<div class="tslot" onclick="setTime('${t}',this)">${t}</div>`).join('')}
             </div>
-          </div>`).join('')}
-        </div>
-        <div style="margin-top:20px">
-          <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);margin-bottom:10px">Pickup Date</div>
-          <div class="field" style="max-width:220px"><input type="date" id="pickupDate" min="${new Date().toISOString().split('T')[0]}"/></div>
-        </div>
-        <div style="margin-top:16px">
-          <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);margin-bottom:10px">Appointment Time Slot</div>
-          <div class="time-slots">
-            ${['9am','11am','1pm','3pm'].map(t=>`<div class="tslot ${selTime===t?'sel':''}" onclick="setTime('${t}')">${t}</div>`).join('')}
           </div>
         </div>
-        <div style="margin-top:16px">
-          <div class="field"><label>Notes for ShiplyCo team</label><input type="text" placeholder="e.g. Wrap all pallets, truck arriving from XYZ carrier" id="orderNotes"/></div>
-        </div>
-        <div id="costPreviewPallet"></div>
-        <div style="margin-top:16px;display:flex;justify-content:flex-end">
-          <button class="submit-btn" onclick="submitOrder('pallet_out')">Submit Pickup Request</button>
-        </div>
+        <div class="field" style="margin-top:10px"><label>Carrier / Broker Name</label><input type="text" id="carrierName" placeholder="e.g. XPO, Amazon Freight, custom broker…"/></div>
+      </div>
+
+      ${type==='fba'?fbaDocUploads():''}
+      ${type==='pallet_out'?palletDocUploads():''}
+
+      <!-- NOTES -->
+      <div class="field" style="margin-top:16px"><label>Notes for ShiplyCo team (optional)</label>
+        <input type="text" id="orderNotes" placeholder="Any special instructions…"/>
+      </div>
+
+      <!-- SLA NOTICE -->
+      <div style="margin-top:16px;padding:10px 14px;background:var(--blue-bg);border:1px solid var(--blue);border-radius:8px;font-size:12px;color:var(--ink2)">
+        ⏱ We fulfill orders within <strong>24–48 hours</strong>. Maximum turnaround is <strong>72 hours</strong>.
+      </div>
+
+      <div style="margin-top:20px;display:flex;justify-content:flex-end">
+        <button class="submit-btn" onclick="submitOrderToSb('${type}')">Submit Order →</button>
       </div>
     </div>
   </div>`;
-  const pickpackForm = `
-  <!-- PICK & PACK FORM -->
-  <div class="order-form ${selOrderType==='pickpack'?'open':''}" id="form-pickpack">
-    <div class="card">
-      <div class="card-head"><span class="card-title">📦 Pick & Pack Order</span><span class="tag tb" style="font-size:11px">Works for any marketplace or channel</span></div>
-      <div style="padding:20px">
-        <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);margin-bottom:10px">Sales Channel</div>
-        <div class="channel-btns" id="channelBtns">
-          ${['Amazon','eBay','Walmart.com','Personal Store','Other'].map(ch=>`
-          <div class="ch-btn ${selChannel===ch?'sel':''}" onclick="setChannel('${ch}')">${ch}</div>`).join('')}
-        </div>
-        <div style="margin-top:18px">
-          <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);margin-bottom:10px">Upload Shipping Label</div>
-          <div class="upzone" onclick="this.querySelector('input').click()" style="max-width:400px">
-            <input type="file" accept=".pdf,image/*" onchange="showFiles(this,'lbl-upload')"/>
-            ${ico('up',22)}<div class="upzone-txt">Click to upload shipping label · PDF or image</div>
+}
+
+function pickpackFields(){
+  return `<div>
+    <div class="form-section-label">Sales Channel</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px" id="channelBtns">
+      ${['Amazon','eBay','Walmart','Shopify','Other'].map(ch=>`
+      <div class="ch-btn" onclick="setChannel('${ch}',this)">${ch}</div>`).join('')}
+    </div>
+    <div class="form-section-label">Items to Pick & Pack</div>
+    <div id="ppItems">${ppItemRow(1)}</div>
+    <button type="button" class="add-btn" onclick="addPpItem()" style="font-size:11px;padding:8px">+ Add Item</button>
+    <div class="field" style="margin-top:14px"><label>Shipping Label (optional — upload or we print from carrier)</label>
+      ${uploadZone('pp_label','Shipping label · PDF or image')}
+    </div>
+  </div>`;
+}
+
+function fbaTopFields(){
+  return `<div class="fg2" style="margin-bottom:4px">
+    <div class="field"><label>Amazon FC Destination Code</label><input type="text" id="fcCode" placeholder="e.g. DFW2, ONT8, LAX9"/></div>
+    <div class="field"><label>Amazon Shipment ID (optional)</label><input type="text" id="fbaShipmentId" placeholder="From Seller Central"/></div>
+  </div>
+  <div class="fg2">
+    <div class="field"><label>Total Units</label><input type="number" id="fbaUnits" placeholder="e.g. 240" oninput="updateFbaCost()"/></div>
+    <div class="field"><label>FNSKU Labels per Unit</label>
+      <select id="fbaLabels" onchange="updateFbaCost()">
+        <option value="1">1 label per unit</option>
+        <option value="2">2 labels per unit</option>
+      </select>
+    </div>
+  </div>
+  <div id="fbaCostPreview" style="margin-top:8px"></div>`;
+}
+
+function fbaDocUploads(){
+  const docs = [
+    {id:'fba_item_labels',  icon:'🏷',  label:'Item Labels',     hint:'FNSKU / barcode labels — one per unit'},
+    {id:'fba_box_labels',   icon:'📦',  label:'Box Labels',      hint:'Amazon box content labels — one per box'},
+    {id:'fba_pallet_labels',icon:'🪣',  label:'Pallet Labels',   hint:'Amazon pallet labels — one per pallet'},
+    {id:'fba_shipment_plan',icon:'📋',  label:'Shipment Plan',   hint:'PDF export from Amazon Seller Central'},
+    {id:'fba_bol',          icon:'📄',  label:'Bill of Lading',  hint:'Required if shipping via freight carrier'},
+  ];
+  return `<div style="margin-top:20px">
+    <div class="form-section-label">FBA Documents <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--ink3)">(all optional — upload what applies to your shipment)</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
+      ${docs.map(d=>`
+      <div style="border:1.5px dashed var(--border2);border-radius:10px;padding:14px;background:var(--surface)" id="docSlot_${d.id}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:20px">${d.icon}</span>
+          <div>
+            <div style="font-size:13px;font-weight:700">${d.label}</div>
+            <div style="font-size:11px;color:var(--ink3)">${d.hint}</div>
           </div>
-          <div class="up-files" id="lbl-upload"></div>
         </div>
-        <div style="margin-top:16px" class="fg2">
-          <div class="field"><label>Order Reference / Tracking #</label><input type="text" placeholder="Order ID or tracking number"/></div>
-          <div class="field"><label>Ship By Date</label><input type="date"/></div>
+        <div class="upzone" style="padding:12px 10px" onclick="this.querySelector('input').click()">
+          <input type="file" accept=".pdf,image/*,.zip" style="display:none" onchange="markDocUploaded('${d.id}',this)"/>
+          <div style="font-size:12px;color:var(--ink3);text-align:center">Click to upload · PDF or image</div>
         </div>
-        <div style="margin-top:14px">
-          <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);margin-bottom:10px">Items to Pick & Pack</div>
-          <div id="fbmItems">${fbmItemRow(1)}</div>
-          <button type="button" class="add-btn" onclick="addFbmItem()" style="font-size:11px;padding:8px">${ico('plus',11)} Add Item</button>
-        </div>
-        <div style="margin-top:14px">
-          <div class="field"><label>Special Instructions</label><input type="text" placeholder="e.g. Include packing slip, gift wrap, fragile items…"/></div>
-        </div>
-        <div class="cost-preview" style="margin-top:14px">
-          <div class="cp-title">Auto-Charge to Invoice</div>
-          <div class="cp-row"><span>Pick & Pack — 1 order</span><span style="font-weight:700">${fmt(RATES.pick_pack_standard)}</span></div>
-          <div class="cp-row"><span>Shipping label print</span><span style="font-weight:700">${fmt(RATES.label)}</span></div>
-          <div class="cp-total"><span>Added to Invoice</span><span>${fmt(RATES.pick_pack_standard+RATES.label)}</span></div>
-        </div>
-        <div style="margin-top:16px;display:flex;justify-content:flex-end">
-          <button class="submit-btn" onclick="submitOrder('pickpack')">Submit Order</button>
-        </div>
-      </div>
+        <div id="docFile_${d.id}" style="margin-top:6px;font-size:12px;color:var(--green);display:none"></div>
+      </div>`).join('')}
     </div>
   </div>`;
-  const marketplaceForm = `
-  <!-- MARKETPLACE FORM -->
-  <div class="order-form ${selOrderType==='marketplace'?'open':''}" id="form-marketplace">
-    <div class="card">
-      <div class="card-head"><span class="card-title">🛒 Marketplace Store Integration</span><span class="tag to" style="font-size:11px">Coming Soon</span></div>
-      <div style="padding:32px;text-align:center">
-        <div style="font-size:48px;margin-bottom:16px">🔌</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;text-transform:uppercase;margin-bottom:8px">Store Integrations Coming Soon</div>
-        <div style="font-size:13px;color:var(--ink3);max-width:400px;margin:0 auto 20px">In a future update, you'll be able to connect your Walmart, eBay, Shopify, and other stores directly to ShiplyCo — orders will flow in automatically and we'll fulfill them for you.</div>
-        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:24px">
-          ${['Walmart.com','eBay','Shopify','Amazon','Etsy'].map(s=>`<div style="padding:8px 16px;border:2px dashed var(--border2);border-radius:8px;font-size:13px;font-weight:600;color:var(--ink3)">${s}</div>`).join('')}
-        </div>
-        <div style="font-size:12px;color:var(--ink3);margin-bottom:16px">In the meantime, use <strong>Pick & Pack</strong> to fulfill marketplace orders by uploading your shipping label.</div>
-        <button class="submit-btn" onclick="setOrderType('pickpack')">📦 Place a Pick & Pack Order Instead</button>
-      </div>
-    </div>
-  </div>`;
+}
 
-  const fbaForm = `
-  <!-- FBA FORM -->
-  <div class="order-form ${selOrderType==='fba'?'open':''}" id="form-fba">
-    <div class="card">
-      <div class="card-head"><span class="card-title">🏭 FBA Shipment</span></div>
-      <div style="padding:20px">
-        <div class="fg2" style="margin-bottom:14px">
-          <div class="field"><label>Amazon FBA Destination (FC Code)</label><input type="text" placeholder="e.g. DFW2, LAX9, ONT8"/></div>
-          <div class="field"><label>Shipment ID (optional)</label><input type="text" placeholder="Amazon Shipment ID"/></div>
+function palletFields(){
+  return `<div>
+    <div class="form-section-label">Pallets to Ship Out</div>
+    <div class="pallet-sel-grid" id="palletSelGrid">
+      ${PALLETS.filter(p=>p.truck).map(p=>`
+      <div class="psel ${selPallets.includes(p.num)?'sel':''}" onclick="togglePalletSel(${p.num},this)">
+        <div class="psel-check">${selPallets.includes(p.num)?'✓':''}</div>
+        <div class="psel-info">
+          <div class="psel-loc">📍 ${p.loc} · Pallet ${p.num}</div>
+          <div class="psel-desc">${p.items[0].desc}${p.items.length>1?` +${p.items.length-1} more`:''}</div>
+          <div class="psel-units">${p.items.reduce((s,i)=>s+i.units,0).toLocaleString()} units</div>
         </div>
-        <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);margin-bottom:10px">Select Pallets / Inventory</div>
-        <div class="pallet-sel-grid">
-          ${PALLETS.filter(p=>p.truck).map(p=>`
-          <div class="psel" onclick="this.classList.toggle('sel');this.querySelector('.psel-check').textContent=this.classList.contains('sel')?'✓':''">
-            <div class="psel-check"></div>
-            <div class="psel-info">
-              <div class="psel-loc">📍 ${p.loc} · Pallet ${p.num}</div>
-              <div class="psel-desc">${p.items[0].desc}${p.items.length>1?` +${p.items.length-1} more`:''}</div>
-              <div class="psel-units">${p.items.reduce((s,i)=>s+i.units,0).toLocaleString()} units</div>
-            </div>
-          </div>`).join('')}
-        </div>
-        <div style="margin-top:16px" class="fg2">
-          <div class="field"><label>Total Units for FBA Prep</label><input type="number" placeholder="e.g. 312" id="fbaUnits" oninput="updateFbaCost()"/></div>
-          <div class="field"><label>FNSKU Labels per Unit</label><select id="fbaLabels"><option value="1">1 label per unit</option><option value="2">2 labels per unit</option></select></div>
-        </div>
-        <div id="fbaCostPreview" class="cost-preview" style="margin-top:14px">
-          <div class="cp-title">Auto-Charge to Invoice</div>
-          <div class="cp-row"><span>FBA Kitting (0 units × $0.75)</span><span style="font-weight:700">$0.00</span></div>
-          <div class="cp-row"><span>FNSKU Labels (0 × $0.35)</span><span style="font-weight:700">$0.00</span></div>
-          <div class="cp-total"><span>Added to Invoice</span><span>$0.00</span></div>
-        </div>
-        <div style="margin-top:16px;display:flex;justify-content:flex-end">
-          <button class="submit-btn" onclick="submitOrder('fba')">Submit FBA Request</button>
-        </div>
-      </div>
+      </div>`).join('')}
     </div>
-  </div>`;
-  return header + palletOutForm + pickpackForm + marketplaceForm + fbaForm;
-}
-function fbmItemRow(n){
-  return `<div class="irow" style="margin-bottom:8px" id="fbmitem-${n}">
-    <div class="fg3">
-      <div class="field"><label>SKU / Item #</label>
-        <select onchange="if(this.value)this.nextElementSibling.value=this.options[this.selectedIndex].dataset.desc||''">
-          <option value="">Select item…</option>
-          ${UPCS.map(u=>`<option value="${u.sku||u.upc}" data-desc="${u.desc}">${u.desc}</option>`).join('')}
-        </select>
-        <input type="text" placeholder="Or type description" style="margin-top:4px"/>
-      </div>
-      <div class="field"><label>Qty to Ship</label><input type="number" placeholder="1"/></div>
-      <div class="field"><label>Location</label><input type="text" placeholder="e.g. AA05-A"/></div>
-    </div>
+    <div id="palletCostPreview" style="margin-top:12px"></div>
   </div>`;
 }
-let fbmItemCount=1;
-function addFbmItem(){fbmItemCount++;const w=document.getElementById('fbmItems');const d=document.createElement('div');d.innerHTML=fbmItemRow(fbmItemCount);w.appendChild(d.firstElementChild)}
 
-function setOrderType(t){
-  selOrderType=t;selPallets=[];selTime=null;selChannel=null;
-  showPage('placeorder');
+function palletDocUploads(){
+  return `<div style="margin-top:20px">
+    <div class="form-section-label">Documents <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--ink3)">(optional)</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
+      ${[
+        {id:'bol',   icon:'📄', label:'Bill of Lading',  hint:'Upload your BOL if provided by carrier/broker'},
+        {id:'pallet_docs', icon:'📋', label:'Pallet Docs / Packing List', hint:'Any additional shipping docs'},
+      ].map(d=>`
+      <div style="border:1.5px dashed var(--border2);border-radius:10px;padding:14px;background:var(--surface)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:20px">${d.icon}</span>
+          <div>
+            <div style="font-size:13px;font-weight:700">${d.label}</div>
+            <div style="font-size:11px;color:var(--ink3)">${d.hint}</div>
+          </div>
+        </div>
+        <div class="upzone" style="padding:12px 10px" onclick="this.querySelector('input').click()">
+          <input type="file" accept=".pdf,image/*" style="display:none" onchange="markDocUploaded('${d.id}',this)"/>
+          <div style="font-size:12px;color:var(--ink3);text-align:center">Click to upload · PDF or image</div>
+        </div>
+        <div id="docFile_${d.id}" style="margin-top:6px;font-size:12px;color:var(--green);display:none"></div>
+      </div>`).join('')}
+    </div>
+  </div>`;
 }
+
+function uploadZone(id, hint){
+  return `<div class="upzone" onclick="this.querySelector('input').click()" style="max-width:400px">
+    <input type="file" id="${id}" accept=".pdf,image/*" style="display:none" onchange="showFiles(this,'${id}_list')"/>
+    <div class="upzone-txt">${hint}</div>
+  </div><div id="${id}_list"></div>`;
+}
+
+function markDocUploaded(docId, input){
+  const el=document.getElementById('docFile_'+docId);
+  const slot=document.getElementById('docSlot_'+docId);
+  if(el && input.files[0]){
+    el.textContent='✓ '+input.files[0].name;
+    el.style.display='block';
+    if(slot) slot.style.borderColor='var(--green)';
+  }
+}
+
+function selectCarrier(el, carrier){
+  _oCarrier=carrier;
+  document.querySelectorAll('#carrierBtns .ch-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  const needsSchedule = carrier==='Other Carrier / Broker / Freight' || _oType==='fba';
+  const sec=document.getElementById('scheduledSection');
+  if(sec) sec.style.display=needsSchedule?'block':'none';
+}
+
+function setTime(t, el){
+  selTime=t;
+  document.querySelectorAll('.tslot').forEach(b=>b.classList.remove('sel'));
+  if(el) el.classList.add('sel');
+}
+function setChannel(ch, el){
+  selChannel=ch;
+  document.querySelectorAll('#channelBtns .ch-btn').forEach(b=>b.classList.remove('sel'));
+  if(el) el.classList.add('sel');
+}
+
+let _ppItemCount=1;
+function ppItemRow(n){
+  return `<div class="irow fg3" style="margin-bottom:8px" id="ppitem-${n}">
+    <div class="field"><label>Item / SKU</label><input type="text" placeholder="Description or SKU"/></div>
+    <div class="field"><label>Qty</label><input type="number" placeholder="1" min="1"/></div>
+  </div>`;
+}
+function addPpItem(){
+  _ppItemCount++;
+  const w=document.getElementById('ppItems');
+  const d=document.createElement('div');
+  d.innerHTML=ppItemRow(_ppItemCount);
+  w.appendChild(d.firstElementChild);
+}
+
+function updateFbaCost(){
+  const el=document.getElementById('fbaCostPreview'); if(!el) return;
+  const units=+document.getElementById('fbaUnits')?.value||0;
+  const labels=+document.getElementById('fbaLabels')?.value||1;
+  const kit=units*RATES.fba_kitting, lbl=units*labels*RATES.fba_label;
+  el.innerHTML=units?`<div class="cost-preview">
+    <div class="cp-title">Auto-Charge to Invoice</div>
+    <div class="cp-row"><span>FBA Kitting (${units} × ${fmt(RATES.fba_kitting)})</span><span style="font-weight:700">${fmt(kit)}</span></div>
+    <div class="cp-row"><span>FNSKU Labels (${units*labels} × ${fmt(RATES.fba_label)})</span><span style="font-weight:700">${fmt(lbl)}</span></div>
+    <div class="cp-total"><span>Added to Invoice</span><span>${fmt(kit+lbl)}</span></div>
+  </div>`:'';
+}
+
 function togglePalletSel(num,el){
   const idx=selPallets.indexOf(num);
-  if(idx>-1)selPallets.splice(idx,1);else selPallets.push(num);
+  if(idx>-1) selPallets.splice(idx,1); else selPallets.push(num);
   el.classList.toggle('sel');
   el.querySelector('.psel-check').textContent=selPallets.includes(num)?'✓':'';
   updatePalletCost();
 }
-function setTime(t){selTime=t;document.querySelectorAll('.tslot').forEach(el=>{el.classList.toggle('sel',el.textContent===t)})}
-function setChannel(ch){selChannel=ch;document.querySelectorAll('.ch-btn').forEach(el=>{el.classList.toggle('sel',el.textContent===ch)})}
 function updatePalletCost(){
-  const el=document.getElementById('costPreviewPallet');
-  if(!el)return;
+  const el=document.getElementById('palletCostPreview'); if(!el) return;
   const n=selPallets.length;
   const rate=getRate('platinum','outbound_pallet');
-  const wrapAmt=n*RATES.pallet_wrap;
-  const outAmt=n*rate;
-  el.innerHTML=n?`<div class="cost-preview"><div class="cp-title">Auto-Charge to Invoice</div>
-    <div class="cp-row"><span>Outbound — ${n} pallet${n>1?'s':''} × ${fmt(rate)}</span><span style="font-weight:700">${fmt(outAmt)}</span></div>
-    <div class="cp-row"><span>Pallet Wrapping — ${n} × ${fmt(RATES.pallet_wrap)}</span><span style="font-weight:700">${fmt(wrapAmt)}</span></div>
-    <div class="cp-total"><span>Added to Invoice</span><span>${fmt(outAmt+wrapAmt)}</span></div></div>`:'';
-}
-function updateFbaCost(){
-  const el=document.getElementById('fbaCostPreview');if(!el)return;
-  const units=+document.getElementById('fbaUnits').value||0;
-  const labels=+document.getElementById('fbaLabels').value||1;
-  const kit=units*RATES.fba_kitting;
-  const lbl=units*labels*RATES.fba_label;
-  el.innerHTML=`<div class="cp-title">Auto-Charge to Invoice</div>
-    <div class="cp-row"><span>FBA Kitting (${units} units × ${fmt(RATES.fba_kitting)})</span><span style="font-weight:700">${fmt(kit)}</span></div>
-    <div class="cp-row"><span>FNSKU Labels (${units*labels} × ${fmt(RATES.fba_label)})</span><span style="font-weight:700">${fmt(lbl)}</span></div>
-    <div class="cp-total"><span>Added to Invoice</span><span>${fmt(kit+lbl)}</span></div>`;
+  if(!n){el.innerHTML='';return;}
+  const wrap=n*RATES.pallet_wrap, out=n*rate;
+  el.innerHTML=`<div class="cost-preview">
+    <div class="cp-title">Auto-Charge to Invoice</div>
+    <div class="cp-row"><span>Outbound — ${n} pallet${n>1?'s':''} × ${fmt(rate)}</span><span style="font-weight:700">${fmt(out)}</span></div>
+    <div class="cp-row"><span>Pallet Wrapping — ${n} × ${fmt(RATES.pallet_wrap)}</span><span style="font-weight:700">${fmt(wrap)}</span></div>
+    <div class="cp-total"><span>Added to Invoice</span><span>${fmt(out+wrap)}</span></div>
+  </div>`;
 }
 
-function submitOrder(type){
-  const typeLabels={pallet_out:'Pallet Pickup',pickpack:'Pick & Pack',fbm:'Pick & Pack',fba:'FBA Shipment',marketplace:'Pick & Pack'};
-  const newOrder={
-    id:'ORD-'+String(1000+ORDERS.length+1),
-    customer:'Platinum Financial Group',custId:'platinum',
-    type,status:'pending',
-    date:document.getElementById('pickupDate')?.value||new Date().toISOString().split('T')[0],
-    time:selTime||'9am',
-    pallets:selPallets.map(n=>PALLETS.find(p=>p.num===n)).filter(Boolean).map(p=>({num:p.num,loc:p.loc,desc:p.items[0].desc,units:p.items.reduce((s,i)=>s+i.units,0)})),
-    notes:document.getElementById('orderNotes')?.value||'',
-    label:null,channel:selChannel||'—',
-    autoCharge:{desc:`${typeLabels[type]} (${type==='pallet_out'?selPallets.length+' pallets':'1 order'})`,qty:type==='pallet_out'?selPallets.length:1,rate:type==='pallet_out'?getRate('platinum','outbound_pallet'):RATES.pick_pack_standard,amt:type==='pallet_out'?selPallets.length*getRate('platinum','outbound_pallet'):RATES.pick_pack_standard}
+async function submitOrderToSb(type){
+  const btn = event.target;
+  btn.disabled=true; btn.textContent='Submitting…';
+
+  // Collect items for pick & pack
+  let items=[];
+  if(type==='pickpack'){
+    document.querySelectorAll('[id^="ppitem-"]').forEach(row=>{
+      const inputs=row.querySelectorAll('input');
+      const desc=inputs[0]?.value?.trim(), qty=+inputs[1]?.value||1;
+      if(desc) items.push({desc, qty});
+    });
+  }
+
+  const order = {
+    cust_id: currentUser?.cust_id||currentEmployee?.cust_id||'platinum',
+    type,
+    status: 'pending',
+    channel: selChannel||(_oCarrier)||null,
+    date: document.getElementById('pickupDate')?.value||null,
+    time: selTime||null,
+    notes: document.getElementById('orderNotes')?.value?.trim()||null,
+    items: items.length?items:null,
+    carrier: _oCarrier||null,
+    fc_code: document.getElementById('fcCode')?.value?.trim()||null,
+    fba_shipment_id: document.getElementById('fbaShipmentId')?.value?.trim()||null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
-  ORDERS.unshift(newOrder);
-  selOrderType=null;selPallets=[];selTime=null;selChannel=null;
-  const btn=event.target;btn.textContent='✓ Order Submitted!';btn.style.background='var(--green)';
-  setTimeout(()=>showPage('myorders'),1200);
+
+  const {data, error} = await sb.from('orders').insert([order]).select().single();
+  if(error){
+    showToast('⚠ '+error.message);
+    btn.disabled=false; btn.textContent='Submit Order →';
+    return;
+  }
+
+  btn.textContent='✓ Order Submitted!';
+  btn.style.background='var(--green)';
+  showToast(`✓ Order ${data.id||''} submitted — we'll fulfill within 24–48 hours`);
+  selOrderType=null; selPallets=[]; selTime=null; selChannel=null; _oCarrier=null;
+  setTimeout(()=>showPage('myorders'), 1400);
 }
+
+// legacy shim
+function submitOrder(type){ submitOrderToSb(type); }
+function fbmItemRow(n){ return ppItemRow(n); }
+let fbmItemCount=1;
+function addFbmItem(){ addPpItem(); }
+
+
 
 // ── ORDERS — Supabase wired ──
 let _sbOrders = [];
@@ -3458,53 +3588,122 @@ function markStepDone(e, orderId, stepIndex, totalSteps){
 // ── BARCODE SCAN CONFIRMATION ──
 function confirmScan(orderId, stepIndex, totalSteps, value){
   const v = (value||'').trim();
-  const resultEl = document.getElementById(`scanResult_${orderId}_${stepIndex}`);
+  const resultEl = document.getElementById('scanResult_'+orderId+'_'+stepIndex);
 
   if(!v){
-    if(resultEl){resultEl.textContent='⚠ Please scan or enter a barcode first.';resultEl.style.color='var(--orange)';resultEl.style.display='block';}
+    if(resultEl){
+      resultEl.innerHTML='<div style="color:var(--orange);font-weight:600">⚠ Please scan or enter a barcode first.</div>';
+      resultEl.style.display='block';
+    }
     return;
   }
 
-  // Look up barcode in PALLETS and SKU_CATALOG
-  const palletMatch = PALLETS.find(p=>p.items?.some(i=>i.upc===v||i.sku===v));
-  const skuMatch    = SKU_CATALOG.find(s=>s.upc===v||s.sku===v);
-  const invMatch    = INVENTORY.find(l=>l.id===v||l.sku===v);
+  // Get the expected SKUs for this order
+  const order = (_dispatchOrders||[]).find(o=>o.id===orderId)
+             || (_myTaskOrders||[]).find(o=>o.id===orderId);
+  const expectedItems = order?.items
+    ? (Array.isArray(order.items)?order.items:JSON.parse(order.items||'[]'))
+    : [];
+  const expectedSkus = expectedItems.map(i=>(i.sku||'').toLowerCase()).filter(Boolean);
 
-  if(resultEl){
-    if(palletMatch||skuMatch||invMatch){
-      const name = skuMatch?.name||palletMatch?.items?.[0]?.desc||invMatch?.desc||v;
-      const loc  = palletMatch?.loc||invMatch?.id||'—';
-      resultEl.innerHTML=`<span style="color:var(--green);font-weight:700">✅ Barcode confirmed — ${name}${loc!=='—'?' · Location: '+loc:''}</span>`;
-      resultEl.style.display='block';
-      // Auto-advance after short delay
-      setTimeout(()=>{
-        markStepDone({stopPropagation:()=>{}}, orderId, stepIndex, totalSteps);
-      }, 800);
-    } else {
-      // Unknown barcode — stay visible 8 seconds so employee can read it
-      resultEl.innerHTML=`
-        <div style="color:var(--orange);font-weight:700;margin-bottom:4px">⚠ Barcode not in system yet — confirmed anyway.</div>
-        <div style="color:var(--ink3);font-size:11px;margin-bottom:4px">This barcode isn't linked to any SKU or pallet. Add it to SKU Master to track it in future.</div>
-        <div style="color:var(--ink3);font-size:11px">Advancing in <strong id="scanCountdown_${orderId}_${stepIndex}">8</strong> seconds…
-          <button onclick="clearInterval(window._scanTicker_${orderId}_${stepIndex});markStepDone({stopPropagation:()=>{}},'${orderId}',${stepIndex},${totalSteps})"
-            style="margin-left:10px;background:none;border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;cursor:pointer;color:var(--ink2)">
-            Advance now
+  // Look up what was scanned
+  const palletMatch = PALLETS.find(p=>p.items?.some(i=>i.upc===v||i.sku===v));
+  const skuMatch    = SKU_CATALOG.find(s=>s.upc===v||s.sku===v||s.id===v);
+  const invMatch    = INVENTORY.find(l=>l.id===v||l.sku===v);
+  const scannedName = skuMatch?.name||skuMatch?.desc||palletMatch?.items?.[0]?.desc||invMatch?.desc||v;
+  const scannedSku  = (skuMatch?.sku||skuMatch?.id||invMatch?.sku||'').toLowerCase();
+  const inSystem    = !!(palletMatch||skuMatch||invMatch);
+
+  // Check if it matches something expected on this order
+  const matchesOrder = expectedSkus.length===0 // no SKUs on order — just check it's in system
+    || expectedSkus.includes(scannedSku)
+    || expectedSkus.some(s=>v.toLowerCase()===s);
+
+  if(!inSystem){
+    // Hard stop — not in system at all — offer to report to admin via TARA
+    resultEl.innerHTML=`
+      <div style="background:var(--red-light);border:1.5px solid var(--red);border-radius:8px;padding:12px 14px">
+        <div style="color:var(--red);font-weight:800;font-size:13px;margin-bottom:6px">&#10060; Barcode not recognized</div>
+        <div style="color:var(--ink2);font-size:12px;margin-bottom:4px">This barcode isn't in our system. It could be:</div>
+        <div style="color:var(--ink2);font-size:12px;margin-bottom:10px;padding-left:8px">
+          · A pallet that was received but never entered into SKU Master<br>
+          · A mislabeled item<br>
+          · The wrong pallet entirely
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <div style="font-size:12px;color:var(--ink2)">Is this pallet in our warehouse?</div>
+          <button onclick="reportUnknownBarcode('${v}','${orderId}')"
+            style="background:var(--red);color:#fff;border:none;border-radius:7px;padding:8px 16px;font-family:Barlow,sans-serif;font-size:12px;font-weight:700;cursor:pointer">
+            📣 Report to Admin
           </button>
-        </div>`;
-      resultEl.style.display='block';
-      let secs=8;
-      window[`_scanTicker_${orderId}_${stepIndex}`] = setInterval(()=>{
-        secs--;
-        const el=document.getElementById(`scanCountdown_${orderId}_${stepIndex}`);
-        if(el) el.textContent=secs;
-        if(secs<=0) clearInterval(window[`_scanTicker_${orderId}_${stepIndex}`]);
-      },1000);
-      setTimeout(()=>{
-        clearInterval(window[`_scanTicker_${orderId}_${stepIndex}`]);
-        markStepDone({stopPropagation:()=>{}}, orderId, stepIndex, totalSteps);
-      }, 8000);
-    }
+        </div>
+      </div>`;
+  } else if(!matchesOrder){
+    // In system but wrong item for this order
+    const expectedDesc = expectedItems.map(i=>i.desc||i.sku).filter(Boolean).join(', ');
+    resultEl.innerHTML=`
+      <div style="background:var(--red-light);border:1.5px solid var(--red);border-radius:8px;padding:12px 14px">
+        <div style="color:var(--red);font-weight:800;font-size:13px;margin-bottom:4px">&#10060; Wrong item scanned</div>
+        <div style="color:var(--ink2);font-size:12px;margin-bottom:6px">
+          You scanned: <strong>${scannedName}</strong>
+        </div>
+        ${expectedDesc?`<div style="color:var(--ink2);font-size:12px;margin-bottom:4px">
+          This order needs: <strong>${expectedDesc}</strong>
+        </div>`:''}
+        <div style="color:var(--ink2);font-size:12px">You have the wrong pallet. Put it back and find the correct one.</div>
+      </div>`;
+  } else {
+    // Correct — green and advance
+    const loc = palletMatch?.loc||invMatch?.id||'';
+    resultEl.innerHTML=`
+      <div style="background:var(--green-bg);border:1.5px solid var(--green);border-radius:8px;padding:10px 14px">
+        <div style="color:var(--green);font-weight:800;font-size:13px">&#10003; Confirmed — ${scannedName}${loc?' · '+loc:''}</div>
+      </div>`;
+    resultEl.style.display='block';
+    setTimeout(()=>{
+      markStepDone({stopPropagation:()=>{}}, orderId, stepIndex, totalSteps);
+    }, 800);
+    return;
   }
+
+  // For both error cases — show message, clear input, refocus
+  resultEl.style.display='block';
+  const input = document.getElementById('scanInput_'+orderId+'_'+stepIndex);
+  if(input){ input.value=''; input.focus(); }
+}
+
+// ── REPORT UNKNOWN BARCODE TO ADMIN VIA TARA ──
+function reportUnknownBarcode(barcode, orderId){
+  const emp  = currentEmployee?.name || currentUser?.name || 'An employee';
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const msg  = `${emp} scanned an unrecognized barcode while fulfilling order ${orderId}.
+
+Barcode scanned: ${barcode}
+Time: ${time}
+
+This item is not in the SKU Master or inventory. Please investigate — it may be a received pallet that was never logged, a mislabeled item, or something that doesn't belong in the warehouse.`;
+
+  // Fire to TARA
+  injectTara();
+  setTimeout(()=>{
+    const panel = document.getElementById('taraPanel');
+    if(panel && panel.style.display==='none') toggleTara();
+    // Add alert to TARA's feed
+    const feed = document.getElementById('taraFeed');
+    if(feed){
+      const alertEl = document.createElement('div');
+      alertEl.style.cssText='background:var(--red-light);border:1.5px solid var(--red);border-radius:8px;padding:12px 14px;margin-bottom:10px';
+      alertEl.innerHTML=`
+        <div style="color:var(--red);font-weight:800;font-size:12px;margin-bottom:4px">🔍 Unknown Barcode Reported</div>
+        <div style="font-size:12px;color:var(--ink2);margin-bottom:6px"><strong>Barcode:</strong> ${barcode}<br><strong>Order:</strong> ${orderId}<br><strong>Reported by:</strong> ${emp}<br><strong>Time:</strong> ${time}</div>
+        <div style="font-size:11px;color:var(--ink3)">Item not found in SKU Master. May be unreceived, mislabeled, or wrong warehouse.</div>`;
+      feed.prepend(alertEl);
+    }
+    // Also send as a TARA message so AI can respond
+    sendToTara(msg);
+  }, 600);
+
+  showToast('📣 Reported to admin — TARA will investigate');
 }
 
 // ── CAMERA BARCODE SCANNER (phones/tablets with BarcodeDetector API) ──
