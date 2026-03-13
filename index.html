@@ -1595,6 +1595,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeInv()});
 let TARA_OPEN = false;
 let TARA_BRIEFING_DONE = false;
 let TARA_MUTED = false;
+let TARA_CHAT_MODE = false; // false = voice only, true = open chat panel
 let TARA_ALERTS = [];
 let TARA_VOICE_ACTIVE = false;
 let _taraRecognition = null;
@@ -1644,6 +1645,8 @@ function _taraDrawBlob(){
   _taraBlob.speakAmp+=(_taraBlob.speakTarget-_taraBlob.speakAmp)*0.12;
   const amp=_taraBlob.speakAmp;
   ctx.clearRect(0,0,W,H);
+  // Force transparent background
+  ctx.globalCompositeOperation='source-over';
   // atmosphere
   const atmo=ctx.createRadialGradient(CX,CY,20,CX,CY,W*0.75);
   atmo.addColorStop(0,`rgba(232,36,26,${0.12+amp*0.08})`);
@@ -1747,7 +1750,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
 function taraBlobClick(){
   // If panel is open, just close it
   if(TARA_OPEN){ toggleTara(); return; }
-  // Otherwise start voice input
+  // Respect chat mode setting
+  if(TARA_CHAT_MODE){ toggleTara(); return; }
+  // Otherwise voice only
   taraStartVoiceOnly();
 }
 
@@ -1796,6 +1801,17 @@ Current context: ${TARA_ALERTS.length} alerts. Trucks in progress: ${JSON.string
   });
 }
 
+function toggleTaraChatMode(){
+  TARA_CHAT_MODE = !TARA_CHAT_MODE;
+  const btn = document.getElementById('taraChatModeBtn');
+  if(btn){
+    btn.textContent = TARA_CHAT_MODE ? 'CHAT' : 'VOICE';
+    btn.style.color = TARA_CHAT_MODE ? 'rgba(232,36,26,0.9)' : 'rgba(255,255,255,0.5)';
+    btn.style.borderColor = TARA_CHAT_MODE ? 'rgba(232,36,26,0.4)' : 'rgba(255,255,255,0.12)';
+  }
+  showToast(TARA_CHAT_MODE ? '💬 TARA: Chat mode — tap blob to open chat' : '🎤 TARA: Voice mode — tap blob to speak');
+}
+
 function toggleTaraMute(){
   TARA_MUTED = !TARA_MUTED;
   // Stop any current audio
@@ -1826,7 +1842,7 @@ function injectTara(){
              display:flex;flex-direction:column;align-items:center;
              user-select:none;transition:transform 0.2s ease;">
       <div style="position:relative;background:transparent">
-        <canvas id="taraBlobCanvas" width="110" height="110" style="display:block;background:transparent;mix-blend-mode:normal"></canvas>
+        <canvas id="taraBlobCanvas" width="110" height="110" style="display:block;background:transparent;opacity:1"></canvas>
         ${alertCount>0?`<div style="position:absolute;top:6px;right:6px;background:#e8241a;color:#fff;border-radius:50%;width:22px;height:22px;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid #000;box-shadow:0 0 10px rgba(232,36,26,0.8);z-index:1">${alertCount}</div>`:''}
       </div>
       <div style="color:rgba(255,255,255,0.35);font-size:9px;font-weight:800;letter-spacing:5px;text-transform:uppercase;margin-top:-6px">TARA</div>
@@ -1853,6 +1869,10 @@ function injectTara(){
           <div style="color:#fff;font-weight:800;font-size:14px">TARA</div>
           <div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:1px">Tracks All · Reports Anomalies</div>
         </div>
+        <button id="taraChatModeBtn" onclick="toggleTaraChatMode()"
+          style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
+                 border-radius:6px;color:rgba(255,255,255,0.5);font-size:11px;font-weight:700;cursor:pointer;
+                 padding:4px 8px;line-height:1;transition:all 0.15s;letter-spacing:0.5px" title="Toggle chat/voice mode">VOICE</button>
         <button id="taraMuteBtn" onclick="toggleTaraMute()"
           style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
                  border-radius:6px;color:rgba(255,255,255,0.5);font-size:13px;cursor:pointer;
@@ -1906,7 +1926,8 @@ function injectTara(){
     style.textContent = `
       @keyframes taraPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(1.05)}}
       @keyframes taraSlideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-      #taraBtn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(232,36,26,0.35) !important}
+      #taraBtn:hover{transform:translateY(-2px)}
+      #taraBlobCanvas{background:transparent !important;}
       #taraMessages::-webkit-scrollbar{width:4px}
       #taraMessages::-webkit-scrollbar-track{background:transparent}
       #taraMessages::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
