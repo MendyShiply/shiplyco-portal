@@ -7532,15 +7532,14 @@ async function callAI(messages, systemPrompt, onChunk, onDone){
   if(_aiLoading){showToast('⚠ AI is already processing — please wait');return;}
   _aiLoading=true;
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+    const resp = await fetch('https://xyemghdkehsfgeyidmie.supabase.co/functions/v1/tara-voice',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
-        'x-api-key':'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',
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
+        'Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5ZW1naGRrZWhzZmdleWlkbWllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NjE3NTIsImV4cCI6MjA4ODMzNzc1Mn0.4pIvrbdbMrPIrByY9GRnDiyw15BJobPxllr8mQ0c1OA'
       },
       body:JSON.stringify({
+        type:'ai',
         model: ANTHROPIC_MODEL,
         max_tokens: 1000,
         system: systemPrompt,
