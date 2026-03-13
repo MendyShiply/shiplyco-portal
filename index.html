@@ -1594,6 +1594,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeInv()});
 // ── TARA STATE ──
 let TARA_OPEN = false;
 let TARA_BRIEFING_DONE = false;
+let TARA_MUTED = false;
 let TARA_ALERTS = [];
 let TARA_VOICE_ACTIVE = false;
 let _taraRecognition = null;
@@ -1679,6 +1680,7 @@ const TARA_SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhY
 
 async function taraSpeak(text){
   if(!text||text.length<2) return;
+  if(TARA_MUTED) return;
   // strip markdown/html tags for TTS
   const clean=text.replace(/<[^>]+>/g,' ').replace(/[*_`#\[\]]/g,'').replace(/\s+/g,' ').trim().slice(0,500);
   try{
@@ -1727,6 +1729,84 @@ let TRUCKS_INPROGRESS = [
   }
 ];
 
+// ── TARA BLOB CLICK — voice mode (tap=speak, right-click/long-press=open panel) ──
+let _taraHoldTimer = null;
+let _taraVoiceMode = false;
+let _taraVoiceRecognition = null;
+
+// Set up long-press for mobile
+document.addEventListener('DOMContentLoaded', ()=>{
+  const btn = document.getElementById('taraBtn');
+  if(!btn) return;
+  btn.addEventListener('touchstart', ()=>{
+    _taraHoldTimer = setTimeout(()=>{ toggleTara(); }, 600);
+  });
+  btn.addEventListener('touchend', ()=>{ clearTimeout(_taraHoldTimer); });
+});
+
+function taraBlobClick(){
+  // If panel is open, just close it
+  if(TARA_OPEN){ toggleTara(); return; }
+  // Otherwise start voice input
+  taraStartVoiceOnly();
+}
+
+function taraStartVoiceOnly(){
+  if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){
+    toggleTara(); // fall back to panel
+    return;
+  }
+  if(_taraVoiceRecognition){
+    _taraVoiceRecognition.stop();
+    _taraVoiceRecognition = null;
+    _taraBlob.speakTarget = 0;
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const rec = new SR();
+  rec.lang = 'en-US';
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
+  _taraVoiceRecognition = rec;
+  _taraBlob.speakTarget = 0.4; // pulse while listening
+
+  rec.onresult = async (e) => {
+    const transcript = e.results[0][0].transcript;
+    _taraBlob.speakTarget = 0;
+    _taraVoiceRecognition = null;
+    // Send to AI and speak back — no panel needed
+    await taraVoiceOnlyReply(transcript);
+  };
+  rec.onerror = () => { _taraBlob.speakTarget = 0; _taraVoiceRecognition = null; };
+  rec.onend = () => { if(_taraVoiceRecognition) _taraVoiceRecognition = null; _taraBlob.speakTarget = 0; };
+  rec.start();
+}
+
+async function taraVoiceOnlyReply(userText){
+  _taraConv.push({role:'user', content:userText});
+  const inProgress = TRUCKS_INPROGRESS.filter(t=>t.status==='receiving');
+  const system = `You are TARA, the AI warehouse assistant for ShiplyCo 3PL in Houston, TX. Answer in 1-2 short sentences max — you are being spoken aloud. Be direct and precise.
+CRITICAL: Only state facts from the data below. Never guess or speculate. If data is missing, say it naturally — e.g. "He's not assigned to anything right now" or "Nothing's logged for her yet today." Sound like a helpful coworker, not a computer error message.
+Current context: ${TARA_ALERTS.length} alerts. Trucks in progress: ${JSON.stringify(inProgress.map(t=>({name:t.name,pallets:t.pallets.length,done:t.pallets.filter(p=>p.stage>=2).length,receivedBy:t.receivedBy})))}. Orders: ${(ORDERS||[]).slice(0,10).map(o=>({id:o.id,status:o.status,assignedTo:o.assignedTo||'unassigned'})).join(', ')}. Customers: ${CUSTOMERS.map(c=>c.name).join(', ')}.`;
+
+  await callAI(_taraConv, system, null, (reply, err)=>{
+    if(err){ taraSpeak('Sorry, I had trouble connecting.'); return; }
+    _taraConv.push({role:'assistant', content:reply});
+    taraSpeak(reply);
+  });
+}
+
+function toggleTaraMute(){
+  TARA_MUTED = !TARA_MUTED;
+  // Stop any current audio
+  if(TARA_MUTED && _taraBlob.audioCtx){
+    try{_taraBlob.audioCtx.close();}catch(e){}
+    _taraBlob.audioCtx=null;_taraBlob.analyser=null;_taraBlob.freqData=null;_taraBlob.speakTarget=0;
+  }
+  const btn = document.getElementById('taraMuteBtn');
+  if(btn) btn.innerHTML = TARA_MUTED ? '🔇' : '🔊';
+}
+
 // ── TARA WIDGET HTML ──
 function injectTara(){
   // Remove existing if present
@@ -1741,11 +1821,10 @@ function injectTara(){
   widget.id = 'taraWidget';
   widget.innerHTML = `
     <!-- TARA Blob Button -->
-    <div id="taraBtn" onclick="toggleTara()"
+    <div id="taraBtn" onclick="taraBlobClick()" oncontextmenu="toggleTara();return false;"
       style="position:fixed;bottom:16px;right:20px;z-index:8000;cursor:pointer;
              display:flex;flex-direction:column;align-items:center;
-             user-select:none;transition:transform 0.2s ease;
-             background:#111;border-radius:50%;padding:4px">
+             user-select:none;transition:transform 0.2s ease;">
       <div style="position:relative;background:transparent">
         <canvas id="taraBlobCanvas" width="110" height="110" style="display:block;background:transparent;mix-blend-mode:normal"></canvas>
         ${alertCount>0?`<div style="position:absolute;top:6px;right:6px;background:#e8241a;color:#fff;border-radius:50%;width:22px;height:22px;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid #000;box-shadow:0 0 10px rgba(232,36,26,0.8);z-index:1">${alertCount}</div>`:''}
@@ -1774,8 +1853,12 @@ function injectTara(){
           <div style="color:#fff;font-weight:800;font-size:14px">TARA</div>
           <div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:1px">Tracks All · Reports Anomalies</div>
         </div>
+        <button id="taraMuteBtn" onclick="toggleTaraMute()"
+          style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
+                 border-radius:6px;color:rgba(255,255,255,0.5);font-size:13px;cursor:pointer;
+                 padding:4px 8px;line-height:1;transition:all 0.15s" title="Mute voice">🔊</button>
         <button onclick="toggleTara()"
-          style="margin-left:auto;background:none;border:none;color:rgba(255,255,255,0.4);
+          style="margin-left:8px;background:none;border:none;color:rgba(255,255,255,0.4);
                  font-size:18px;cursor:pointer;padding:4px;line-height:1">×</button>
       </div>
 
@@ -2007,25 +2090,32 @@ async function sendToTara(){
 
   const inProgress = TRUCKS_INPROGRESS.filter(t=>t.status==='receiving');
 
-  const system = `You are TARA, the AI warehouse assistant for ShiplyCo 3PL in Houston, TX. You are helpful, direct, and efficient — warehouse workers are busy. Keep responses short and action-oriented.
+  const system = `You are TARA, the AI warehouse assistant for ShiplyCo 3PL in Houston, TX. You are direct, precise, and honest. Warehouse workers are busy — keep responses short and action-oriented.
+
+CRITICAL RULES:
+- Only state facts you can see in the data provided below. Never guess, assume, or make things up.
+- If you don't have the data to answer something, say it naturally like a coworker would — e.g. "Nothing's showing up for him right now", "She's not on anything at the moment", "That's not in the system yet." Never say "I don't have that info" — it sounds robotic.
+- Never say "it's possible", "probably", "might be", "I've checked and..." unless you actually have the data to back it up.
+- If asked about a specific employee's task and you have no assignment data, say "[Name] isn't assigned to anything right now." Be helpful and suggest what they could be assigned to if relevant.
 
 You can:
 1. Parse truck/receiving info from natural speech and return structured JSON prefixed with [TRUCK_DATA]
 2. Draft customer notification emails prefixed with [EMAIL_DRAFT]
-3. Answer questions about warehouse data
+3. Answer questions about warehouse data — only what is in the context below
 4. Flag issues and anomalies
 
 Current warehouse context:
-- Trucks in progress: ${JSON.stringify(inProgress.map(t=>({id:t.id,name:t.name,pallets:t.pallets.length,done:t.pallets.filter(p=>p.stage>=2).length})))}
+- Trucks in progress: ${JSON.stringify(inProgress.map(t=>({id:t.id,name:t.name,pallets:t.pallets.length,done:t.pallets.filter(p=>p.stage>=2).length,receivedBy:t.receivedBy})))}
 - Active alerts: ${TARA_ALERTS.length}
 - Customers: ${CUSTOMERS.map(c=>c.name).join(', ')}
+- Orders: ${(ORDERS||[]).slice(0,10).map(o=>({id:o.id,status:o.status,assignedTo:o.assignedTo||'unassigned',custId:o.custId})).join(', ')}
 - Today: ${new Date().toLocaleDateString()}
 
 If the user is describing a truck arriving, extract: customer name, truck number, pallet count, origin/store, and any items visible on boxes. Return as [TRUCK_DATA]{...json...}
 
 If asked to send an email/notification, draft it and prefix with [EMAIL_DRAFT]
 
-For all other questions, answer conversationally in 1-3 sentences max.`;
+For all other questions, answer in 1-2 sentences max. Be precise. No fluff.`;
 
   await callAI(_taraConv, system, null, (reply, err)=>{
     const thinkEl = document.getElementById(thinkId);
