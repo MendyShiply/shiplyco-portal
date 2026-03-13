@@ -7534,7 +7534,12 @@ async function callAI(messages, systemPrompt, onChunk, onDone){
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':'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',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
       body:JSON.stringify({
         model: ANTHROPIC_MODEL,
         max_tokens: 1000,
