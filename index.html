@@ -406,12 +406,14 @@ td.wrap{white-space:normal;max-width:none}
   nav{
     position:fixed;top:58px;left:0;bottom:0;z-index:500;
     transform:translateX(-100%);transition:transform 0.25s ease;
-    width:240px;box-shadow:var(--shadow-lg);
-    display:flex !important;
+    width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.2);
+    display:flex !important;overflow-y:auto;
   }
   nav.open{transform:translateX(0)}
   .shell{display:block}
   #mainContent{padding:16px 12px;margin-left:0 !important;width:100% !important}
+  .nav-item{white-space:nowrap;overflow:visible;min-width:0}
+  .nav-item span{display:inline !important;opacity:1 !important;width:auto !important}
   .hamburger{display:flex !important}
   .stats{grid-template-columns:repeat(2,1fr) !important}
   .nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:499}
@@ -426,6 +428,9 @@ td.wrap{white-space:normal;max-width:none}
 }
 @media (min-width:901px){
   .hamburger{display:none !important}
+}
+@media (max-width:900px){
+  .hamburger{display:flex !important}
 }
 
 </style>
@@ -468,7 +473,7 @@ td.wrap{white-space:normal;max-width:none}
 <!-- ── APP ── -->
 <div id="app">
   <header>
-    <button class="hamburger" onclick="toggleMobileNav()" aria-label="Toggle navigation" style="display:none;background:none;border:none;cursor:pointer;padding:8px;margin-right:6px;flex-direction:column;gap:5px;align-items:center;justify-content:center">
+    <button class="hamburger" onclick="toggleMobileNav()" aria-label="Toggle navigation" style="background:none;border:none;cursor:pointer;padding:8px;margin-right:6px;flex-direction:column;gap:5px;align-items:center;justify-content:center">
       <span style="display:block;width:20px;height:2px;background:var(--ink);border-radius:2px"></span>
       <span style="display:block;width:20px;height:2px;background:var(--ink);border-radius:2px"></span>
       <span style="display:block;width:20px;height:2px;background:var(--ink);border-radius:2px"></span>
@@ -1839,11 +1844,30 @@ async function taraVoiceOnlyReply(userText){
 CRITICAL: Only state facts from the data below. Never guess or speculate. If data is missing, say it naturally — e.g. "He's not assigned to anything right now" or "Nothing's logged for her yet today." Sound like a helpful coworker, not a computer error message.
 Current context: ${TARA_ALERTS.length} alerts. Trucks in progress: ${JSON.stringify(inProgress.map(t=>({name:t.name,pallets:t.pallets.length,done:t.pallets.filter(p=>p.stage>=2).length,receivedBy:t.receivedBy})))}. Orders: ${(ORDERS||[]).slice(0,10).map(o=>({id:o.id,status:o.status,assignedTo:o.assignedTo||'unassigned'})).join(', ')}. Customers: ${CUSTOMERS.map(c=>c.name).join(', ')}.`;
 
-  await callAI(_taraConv, system, null, (reply, err)=>{
-    if(err){ taraSpeak('Sorry, I had trouble connecting.'); return; }
+  // Use direct fetch to avoid _aiLoading conflict
+  try {
+    const resp = await fetch('https://xyemghdkehsfgeyidmie.supabase.co/functions/v1/tara-voice',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5ZW1naGRrZWhzZmdleWlkbWllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NjE3NTIsImV4cCI6MjA4ODMzNzc1Mn0.4pIvrbdbMrPIrByY9GRnDiyw15BJobPxllr8mQ0c1OA'
+      },
+      body:JSON.stringify({
+        type:'ai',
+        model:'llama-3.3-70b-versatile',
+        max_tokens:150,
+        system:system,
+        messages:_taraConv
+      })
+    });
+    const data = await resp.json();
+    const reply = data.content?.[0]?.text || '';
+    if(!reply){ taraSpeak('Sorry, I had trouble with that.'); return; }
     _taraConv.push({role:'assistant', content:reply});
     taraSpeak(reply);
-  });
+  } catch(e){
+    taraSpeak('Sorry, I had trouble connecting.');
+  }
 }
 
 function toggleTaraChatMode(){
@@ -1892,6 +1916,11 @@ function injectTara(){
         ${alertCount>0?`<div style="position:absolute;top:6px;right:6px;background:#e8241a;color:#fff;border-radius:50%;width:22px;height:22px;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid #000;box-shadow:0 0 10px rgba(232,36,26,0.8);z-index:1">${alertCount}</div>`:''}
       </div>
       <div style="color:#e8241a;font-size:9px;font-weight:900;letter-spacing:5px;text-transform:uppercase;margin-top:-6px;text-shadow:0 0 8px rgba(232,36,26,0.5)">TARA</div>
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <div onclick="event.stopPropagation();toggleTara()" title="Open chat"
+          style="background:rgba(232,36,26,0.15);border:1px solid rgba(232,36,26,0.35);border-radius:12px;
+                 padding:3px 8px;font-size:10px;cursor:pointer;color:#e8241a;font-weight:700">💬 Chat</div>
+      </div>
     </div>
 
     <!-- TARA Panel -->
