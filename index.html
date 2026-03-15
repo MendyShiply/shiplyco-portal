@@ -1603,30 +1603,24 @@ let _taraRecognition = null;
 // ── TARA BLOB STATE ──
 let _taraBlob = {t:0, speakAmp:0, speakTarget:0, raf:null, analyser:null, freqData:null, audioCtx:null};
 
-function _taraGetBlobR(a,time,amp){
-  let r=42;
-  r+=3.5*Math.sin(2*a+time*0.55);
-  r+=2.2*Math.sin(3*a-time*0.42);
-  r+=1.5*Math.sin(5*a+time*0.78);
-  r+=0.9*Math.sin(7*a-time*0.65);
-  r+=0.5*Math.sin(11*a+time*0.95);
-  r+=0.3*Math.sin(13*a-time*0.82);
-  if(amp>0.01){
-    r+=amp*3*Math.sin(4*a+time*5.5);
-    r+=amp*1.8*Math.sin(8*a-time*7);
-    r+=amp*0.9*Math.sin(13*a+time*4.5);
+// ── TARA PARTICLE SYSTEM ──
+let _taraParticles = [];
+function _taraInitParticles(){
+  _taraParticles = [];
+  const N = 280;
+  for(let i=0;i<N;i++){
+    // Distribute on sphere surface using fibonacci sphere
+    const phi = Math.acos(1 - 2*(i+0.5)/N);
+    const theta = Math.PI*(1+Math.sqrt(5))*i;
+    _taraParticles.push({
+      bx: Math.sin(phi)*Math.cos(theta), // base x on unit sphere
+      by: Math.sin(phi)*Math.sin(theta), // base y
+      bz: Math.cos(phi),                  // base z (depth)
+      phase: Math.random()*Math.PI*2,
+      speed: 0.3+Math.random()*0.4,
+      size: 1.2+Math.random()*1.8,
+    });
   }
-  return r;
-}
-
-function _taraBlobPath(ctx,cx,cy,time,amp){
-  ctx.beginPath();
-  for(let i=0;i<=120;i++){
-    const a=(i/120)*Math.PI*2;
-    const r=_taraGetBlobR(a,time,amp);
-    i===0?ctx.moveTo(cx+r*Math.cos(a),cy+r*Math.sin(a)):ctx.lineTo(cx+r*Math.cos(a),cy+r*Math.sin(a));
-  }
-  ctx.closePath();
 }
 
 function _taraDrawBlob(){
@@ -1634,7 +1628,7 @@ function _taraDrawBlob(){
   if(!cv){_taraBlob.raf=null;return;}
   const ctx=cv.getContext('2d');
   const W=cv.width,H=cv.height,CX=W/2,CY=H/2;
-  _taraBlob.t+=0.013;
+  _taraBlob.t+=0.008;
   if(_taraBlob.analyser&&_taraBlob.freqData){
     _taraBlob.analyser.getByteFrequencyData(_taraBlob.freqData);
     const avg=Array.from(_taraBlob.freqData.slice(0,60)).reduce((a,b)=>a+b,0)/60;
@@ -1642,33 +1636,36 @@ function _taraDrawBlob(){
   } else {
     _taraBlob.speakTarget*=0.92;
   }
-  _taraBlob.speakAmp+=(_taraBlob.speakTarget-_taraBlob.speakAmp)*0.12;
+  _taraBlob.speakAmp+=(_taraBlob.speakTarget-_taraBlob.speakAmp)*0.10;
   const amp=_taraBlob.speakAmp;
   ctx.clearRect(0,0,W,H);
-  // Force transparent background
-  ctx.globalCompositeOperation='source-over';
-  // atmosphere
-  const atmo=ctx.createRadialGradient(CX,CY,20,CX,CY,W*0.75);
-  atmo.addColorStop(0,`rgba(232,36,26,${0.12+amp*0.08})`);
-  atmo.addColorStop(0.5,'rgba(180,14,6,0.04)');
-  atmo.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.beginPath();ctx.arc(CX,CY,W*0.75,0,Math.PI*2);ctx.fillStyle=atmo;ctx.fill();
-  // fill
-  _taraBlobPath(ctx,CX,CY,_taraBlob.t,amp);
-  const gFill=ctx.createRadialGradient(CX,CY,0,CX,CY,55);
-  gFill.addColorStop(0,`rgba(232,36,26,0.75)`);
-  gFill.addColorStop(0.5,`rgba(160,14,6,0.55)`);
-  gFill.addColorStop(0.85,`rgba(80,5,2,0.28)`);
-  gFill.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=gFill;ctx.fill();
-  // edge
-  _taraBlobPath(ctx,CX,CY,_taraBlob.t,amp);
-  ctx.strokeStyle=`rgba(255,140,100,${0.80+amp*0.18})`;
-  ctx.lineWidth=1.5+amp*2;ctx.stroke();
-  // bloom
-  _taraBlobPath(ctx,CX,CY,_taraBlob.t,amp);
-  ctx.strokeStyle=`rgba(232,36,26,${0.15+amp*0.10})`;
-  ctx.lineWidth=8+amp*4;ctx.stroke();
+
+  const baseR = 38 + amp*10;
+  const t = _taraBlob.t;
+
+  // Draw particles
+  if(_taraParticles.length===0) _taraInitParticles();
+  for(let i=0;i<_taraParticles.length;i++){
+    const p=_taraParticles[i];
+    // Breathing — radius oscillates
+    const breathe = 1 + 0.06*Math.sin(t*p.speed+p.phase) + amp*0.15*Math.sin(t*4+p.phase*2);
+    const r = baseR * breathe;
+    // Slow rotation around Y axis
+    const rotY = t * 0.18;
+    const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+    const rx = p.bx*cosY + p.bz*sinY;
+    const rz = -p.bx*sinY + p.bz*cosY;
+    const px = CX + rx*r;
+    const py = CY + p.by*r;
+    // Depth-based opacity and size (particles facing us are brighter)
+    const depth = (rz+1)/2; // 0..1
+    const alpha = 0.25 + depth*0.65;
+    const sz = p.size*(0.5+depth*0.8);
+    ctx.beginPath();
+    ctx.arc(px,py,sz,0,Math.PI*2);
+    ctx.fillStyle=`rgba(220,38,26,${alpha})`;
+    ctx.fill();
+  }
   _taraBlob.raf=requestAnimationFrame(_taraDrawBlob);
 }
 
@@ -1840,37 +1837,38 @@ function injectTara(){
     <div id="taraBtn" onclick="taraBlobClick()" oncontextmenu="toggleTara();return false;"
       style="position:fixed;bottom:16px;right:20px;z-index:8000;cursor:pointer;
              display:flex;flex-direction:column;align-items:center;
-             user-select:none;transition:transform 0.2s ease;">
+             user-select:none;transition:transform 0.2s ease;
+             filter:drop-shadow(0 4px 16px rgba(0,0,0,0.3));">
       <div style="position:relative;background:transparent">
         <canvas id="taraBlobCanvas" width="110" height="110" style="display:block;background:transparent;opacity:1"></canvas>
         ${alertCount>0?`<div style="position:absolute;top:6px;right:6px;background:#e8241a;color:#fff;border-radius:50%;width:22px;height:22px;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid #000;box-shadow:0 0 10px rgba(232,36,26,0.8);z-index:1">${alertCount}</div>`:''}
       </div>
-      <div style="color:rgba(255,255,255,0.35);font-size:9px;font-weight:800;letter-spacing:5px;text-transform:uppercase;margin-top:-6px">TARA</div>
+      <div style="color:#e8241a;font-size:9px;font-weight:900;letter-spacing:5px;text-transform:uppercase;margin-top:-6px;text-shadow:0 0 8px rgba(232,36,26,0.5)">TARA</div>
     </div>
 
     <!-- TARA Panel -->
     <div id="taraPanel"
       style="position:fixed;bottom:90px;right:24px;z-index:7999;
              width:360px;max-height:70vh;
-             background:linear-gradient(160deg,#0f0f1a,#1a1a2e);
-             border:1px solid rgba(232,36,26,0.25);border-radius:16px;
+             background:#f0ede8;
+             border:1px solid rgba(0,0,0,0.08);border-radius:16px;
              box-shadow:0 20px 60px rgba(0,0,0,0.5);
              display:none;flex-direction:column;overflow:hidden;
              font-family:Barlow,sans-serif">
 
       <!-- Panel Header -->
-      <div style="padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.07);
+      <div style="padding:16px 18px;border-bottom:1px solid rgba(0,0,0,0.08);
                   display:flex;align-items:center;gap:12px;flex-shrink:0">
         <div style="width:38px;height:38px;border-radius:50%;
                     background:linear-gradient(135deg,var(--red),#ff6b35);
                     display:flex;align-items:center;justify-content:center;
                     font-size:16px;font-weight:900;color:#fff">T</div>
         <div>
-          <div style="color:#fff;font-weight:800;font-size:14px">TARA</div>
-          <div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:1px">Tracks All · Reports Anomalies</div>
+          <div style="color:#1a1a1a;font-weight:800;font-size:14px">TARA</div>
+          <div style="color:rgba(0,0,0,0.4);font-size:11px;margin-top:1px">Tracks All · Reports Anomalies</div>
         </div>
         <button id="taraChatModeBtn" onclick="toggleTaraChatMode()"
-          style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
+          style="background:#fff;border:1px solid rgba(0,0,0,0.12);
                  border-radius:6px;color:rgba(255,255,255,0.5);font-size:11px;font-weight:700;cursor:pointer;
                  padding:4px 8px;line-height:1;transition:all 0.15s;letter-spacing:0.5px" title="Toggle chat/voice mode">VOICE</button>
         <button id="taraMuteBtn" onclick="toggleTaraMute()"
@@ -1889,15 +1887,15 @@ function injectTara(){
       </div>
 
       <!-- Input area -->
-      <div style="padding:12px 14px;border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0">
+      <div style="padding:12px 14px;border-top:1px solid rgba(0,0,0,0.08);flex-shrink:0">
         <div style="display:flex;gap:8px;align-items:center">
           <input id="taraInput" type="text"
             placeholder="Tell TARA what's coming off the truck…"
-            style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
-                   border-radius:8px;padding:9px 12px;color:#fff;font-family:Barlow,sans-serif;
+            style="flex:1;background:#fff;border:1px solid rgba(0,0,0,0.12);
+                   border-radius:8px;padding:9px 12px;color:#1a1a1a;font-family:Barlow,sans-serif;
                    font-size:13px;outline:none"
             onfocus="this.style.borderColor='rgba(232,36,26,0.5)'"
-            onblur="this.style.borderColor='rgba(255,255,255,0.12)'"
+            onblur="this.style.borderColor='rgba(0,0,0,0.12)'"
             onkeydown="if(event.key==='Enter')sendToTara()"/>
           <button id="taraMicBtn" onclick="toggleTaraVoice()"
             style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
@@ -1909,7 +1907,7 @@ function injectTara(){
                    padding:9px 14px;color:#fff;font-family:Barlow,sans-serif;
                    font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0">Send</button>
         </div>
-        <div style="color:rgba(255,255,255,0.25);font-size:10px;margin-top:6px;text-align:center">
+        <div style="color:rgba(0,0,0,0.3);font-size:10px;margin-top:6px;text-align:center">
           Ask anything · Log a truck · Send customer updates
         </div>
       </div>
@@ -1930,12 +1928,14 @@ function injectTara(){
       #taraBlobCanvas{background:transparent !important;}
       #taraMessages::-webkit-scrollbar{width:4px}
       #taraMessages::-webkit-scrollbar-track{background:transparent}
-      #taraMessages::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+      #taraMessages::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:2px}
       .tara-msg{animation:taraSlideIn 0.25s ease}
-      .tara-user-msg{background:rgba(232,36,26,0.15);border:1px solid rgba(232,36,26,0.2);border-radius:10px 10px 2px 10px;padding:10px 13px;color:#fff;font-size:13px;align-self:flex-end;max-width:85%}
-      .tara-ai-msg{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px 10px 10px 2px;padding:10px 13px;color:rgba(255,255,255,0.85);font-size:13px;line-height:1.6;max-width:95%}
-      .tara-alert{background:rgba(232,36,26,0.1);border-left:3px solid var(--red);border-radius:0 8px 8px 0;padding:10px 13px;color:rgba(255,255,255,0.85);font-size:12px;line-height:1.6}
-      .tara-ok{background:rgba(30,122,79,0.15);border-left:3px solid #1e7a4f;border-radius:0 8px 8px 0;padding:10px 13px;color:rgba(255,255,255,0.85);font-size:12px}
+      .tara-user-msg{background:rgba(200,200,210,0.25);border:none;border-radius:18px 18px 4px 18px;padding:10px 14px;color:#1a1a1a;font-size:13px;align-self:flex-end;max-width:80%}
+      .tara-ai-msg{background:#fff;border:none;border-radius:12px;padding:14px 16px;color:#2a2a2a;font-size:13px;line-height:1.7;max-width:92%;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+      .tara-ai-wrap{display:flex;align-items:flex-start;gap:10px}
+      .tara-orb{width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#ff8c42,#e8241a);flex-shrink:0;box-shadow:0 0 10px rgba(232,36,26,0.4);margin-top:2px}
+      .tara-alert{background:rgba(232,36,26,0.06);border-left:3px solid var(--red);border-radius:0 8px 8px 0;padding:10px 13px;color:#2a2a2a;font-size:12px;line-height:1.6}
+      .tara-ok{background:rgba(30,122,79,0.08);border-left:3px solid #1e7a4f;border-radius:0 8px 8px 0;padding:10px 13px;color:#1a2a1a;font-size:12px}
       .tara-action{display:inline-block;background:rgba(232,36,26,0.2);border:1px solid rgba(232,36,26,0.3);border-radius:6px;padding:5px 12px;color:#ff8a80;font-size:11px;font-weight:700;cursor:pointer;margin-top:6px;margin-right:6px;transition:all 0.15s}
       .tara-action:hover{background:rgba(232,36,26,0.35)}
       .tara-action-green{background:rgba(30,122,79,0.2);border-color:rgba(30,122,79,0.3);color:#4caf87}
@@ -2155,7 +2155,7 @@ For all other questions, answer in 1-2 sentences max. Be precise. No fluff.`;
     } else if(reply.includes('[EMAIL_DRAFT]')){
       handleTaraEmailDraft(reply, msgs);
     } else {
-      msgs.innerHTML+=`<div class="tara-msg tara-ai-msg">${reply.replace(/\n/g,'<br>')}</div>`;
+      msgs.innerHTML+=`<div class="tara-msg tara-ai-wrap"><div class="tara-orb"></div><div class="tara-ai-msg">${reply.replace(/\n/g,'<br>')}</div></div>`;
       taraSpeak(reply);
     }
     msgs.scrollTop = msgs.scrollHeight;
