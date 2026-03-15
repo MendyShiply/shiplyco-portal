@@ -53,7 +53,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--ink);font-
 
 /* ── APP ── */
 #app{display:none;min-height:100vh;flex-direction:column}
-header{background:var(--ink);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:100}
+header{background:var(--ink);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:sticky;top:0;z-index:100}
 .h-brand{display:flex;align-items:center;gap:10px}
 .h-hexicon{width:32px;height:32px}
 .h-wordmark{display:flex;flex-direction:column}
@@ -68,10 +68,10 @@ header{background:var(--ink);height:58px;display:flex;align-items:center;justify
 
 /* ── LAYOUT ── */
 .shell{display:flex;flex:1}
-nav{width:216px;background:var(--surface);border-right:1px solid var(--border);padding:16px 0;flex-shrink:0;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto;overflow-x:hidden}
+nav{width:216px;background:var(--surface);border-right:1px solid var(--border);padding:16px 0;flex-shrink:0;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto}
 .nav-sec{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);font-weight:700;padding:14px 16px 5px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nav-sec:first-child{margin-top:0}
-.nv{display:flex;align-items:center;gap:9px;padding:8px 16px;font-size:13px;font-weight:500;color:var(--ink2);cursor:pointer;transition:all 0.1s;border-left:3px solid transparent;overflow:hidden;min-width:0}
+.nv{display:flex;align-items:center;gap:9px;padding:8px 16px;font-size:13px;font-weight:500;color:var(--ink2);cursor:pointer;transition:all 0.1s;border-left:3px solid transparent;white-space:nowrap}
 .nv:hover{background:var(--bg);color:var(--ink)}
 .nv.on{background:var(--red-light);color:var(--red);border-left-color:var(--red);font-weight:700}
 .nv svg{width:14px;height:14px;opacity:0.5;flex-shrink:0}
@@ -473,11 +473,12 @@ td.wrap{white-space:normal;max-width:none}
 <!-- ── APP ── -->
 <div id="app">
   <header>
-    <button class="hamburger" onclick="toggleMobileNav()" aria-label="Toggle navigation" style="background:none;border:none;cursor:pointer;padding:8px;margin-right:6px;flex-direction:column;gap:5px;align-items:center;justify-content:center">
-      <span style="display:block;width:20px;height:2px;background:var(--ink);border-radius:2px"></span>
-      <span style="display:block;width:20px;height:2px;background:var(--ink);border-radius:2px"></span>
-      <span style="display:block;width:20px;height:2px;background:var(--ink);border-radius:2px"></span>
-    </button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="hamburger" onclick="toggleMobileNav()" aria-label="Toggle navigation" style="background:none;border:none;cursor:pointer;padding:6px;flex-direction:column;gap:4px;align-items:center;justify-content:center">
+        <span style="display:block;width:22px;height:2.5px;background:#fff;border-radius:2px"></span>
+        <span style="display:block;width:22px;height:2.5px;background:#fff;border-radius:2px"></span>
+        <span style="display:block;width:22px;height:2.5px;background:#fff;border-radius:2px"></span>
+      </button>
     <div class="h-brand">
       <svg class="h-hexicon" viewBox="0 0 60 60">
         <polygon points="30,3 55,17 55,43 30,57 5,43 5,17" fill="#e8241a"/>
@@ -489,6 +490,7 @@ td.wrap{white-space:normal;max-width:none}
         <div class="h-name">SHIPLY<span>CO</span></div>
         <div class="h-sub">fulfillment</div>
       </div>
+    </div>
     </div>
     <div class="h-right">
       <span class="h-cust" id="hCust">Platinum Financial Group</span>
@@ -1906,18 +1908,18 @@ function injectTara(){
   widget.id = 'taraWidget';
   widget.innerHTML = `
     <!-- TARA Blob Button -->
-    <div id="taraBtn" onclick="taraBlobClick()" oncontextmenu="toggleTara();return false;"
+    <div id="taraBtn" oncontextmenu="toggleTara();return false;"
       style="position:fixed;bottom:16px;right:20px;z-index:8000;cursor:pointer;
              display:flex;flex-direction:column;align-items:center;
              user-select:none;transition:transform 0.2s ease;
              filter:drop-shadow(0 4px 16px rgba(0,0,0,0.3));">
-      <div style="position:relative;background:transparent">
+      <div style="position:relative;background:transparent" onclick="taraBlobClick()">
         <canvas id="taraBlobCanvas" width="110" height="110" style="display:block;background:transparent;opacity:1"></canvas>
         ${alertCount>0?`<div style="position:absolute;top:6px;right:6px;background:#e8241a;color:#fff;border-radius:50%;width:22px;height:22px;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid #000;box-shadow:0 0 10px rgba(232,36,26,0.8);z-index:1">${alertCount}</div>`:''}
       </div>
       <div style="color:#e8241a;font-size:9px;font-weight:900;letter-spacing:5px;text-transform:uppercase;margin-top:-6px;text-shadow:0 0 8px rgba(232,36,26,0.5)">TARA</div>
       <div style="display:flex;gap:6px;margin-top:4px">
-        <div onclick="event.stopPropagation();toggleTara()" title="Open chat"
+        <div onclick="event.stopPropagation();event.preventDefault();if(!TARA_OPEN)toggleTara();" title="Open chat"
           style="background:rgba(232,36,26,0.15);border:1px solid rgba(232,36,26,0.35);border-radius:12px;
                  padding:3px 8px;font-size:10px;cursor:pointer;color:#e8241a;font-weight:700">💬 Chat</div>
       </div>
