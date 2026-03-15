@@ -69,9 +69,9 @@ header{background:var(--ink);height:58px;display:flex;align-items:center;justify
 /* ── LAYOUT ── */
 .shell{display:flex;flex:1}
 nav{width:216px;background:var(--surface);border-right:1px solid var(--border);padding:16px 0;flex-shrink:0;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto;display:flex;flex-direction:column}
-.nav-sec{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);font-weight:700;padding:14px 16px 5px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav-sec{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);font-weight:700;padding:14px 16px 5px;margin-top:4px}
 .nav-sec:first-child{margin-top:0}
-.nv{display:flex;align-items:center;gap:9px;padding:8px 16px;font-size:13px;font-weight:500;color:var(--ink2);cursor:pointer;transition:all 0.1s;border-left:3px solid transparent;white-space:nowrap}
+.nv{display:flex;align-items:center;gap:9px;padding:8px 16px;font-size:13px;font-weight:500;color:var(--ink2);cursor:pointer;transition:all 0.1s;border-left:3px solid transparent}
 .nv:hover{background:var(--bg);color:var(--ink)}
 .nv.on{background:var(--red-light);color:var(--red);border-left-color:var(--red);font-weight:700}
 .nv svg{width:14px;height:14px;opacity:0.5;flex-shrink:0}
@@ -1763,24 +1763,43 @@ function taraBlobClick(){
   if(TARA_OPEN){ toggleTara(); return; }
   // Respect chat mode setting
   if(TARA_CHAT_MODE){ toggleTara(); return; }
-  // Otherwise voice only
+  // Toggle convo
   taraStartVoiceOnly();
+  // Update TARA label to show state
+  const lbl = document.querySelector('#taraBtn .tara-state-lbl');
+  if(lbl) lbl.textContent = _taraConvoActive ? '● LIVE' : 'TARA';
 }
+
+let _taraConvoActive = false; // continuous convo mode
 
 function taraStartVoiceOnly(){
   if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){
-    showToast('Voice not supported on this browser — use Chrome');
+    showToast('Voice not supported — use Chrome or Safari');
     toggleTara();
     return;
   }
-  // If already listening, stop
-  if(_taraVoiceRecognition){
-    _taraVoiceRecognition.stop();
-    _taraVoiceRecognition = null;
-    _taraBlob.speakTarget = 0;
-    _taraHideListeningHint();
+  // If convo already active, stop it
+  if(_taraConvoActive){
+    _taraStopConvo();
     return;
   }
+  _taraConvoActive = true;
+  _taraListenLoop();
+}
+
+function _taraStopConvo(){
+  _taraConvoActive = false;
+  if(_taraVoiceRecognition){
+    try{_taraVoiceRecognition.stop();}catch(e){}
+    _taraVoiceRecognition = null;
+  }
+  _taraBlob.speakTarget = 0;
+  _taraHideListeningHint();
+  showToast('TARA paused — tap to resume');
+}
+
+function _taraListenLoop(){
+  if(!_taraConvoActive) return;
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const rec = new SR();
   rec.lang = 'en-US';
@@ -1788,48 +1807,66 @@ function taraStartVoiceOnly(){
   rec.interimResults = false;
   rec.maxAlternatives = 1;
   _taraVoiceRecognition = rec;
-  _taraBlob.speakTarget = 0.5;
-  _taraShowListeningHint();
-
-  rec.onstart = () => {
-    _taraBlob.speakTarget = 0.5;
-  };
+  _taraBlob.speakTarget = 0.45;
+  _taraShowListeningHint('🎤 Listening…');
 
   rec.onresult = async (e) => {
-    const transcript = e.results[0][0].transcript;
-    _taraBlob.speakTarget = 0;
+    const transcript = e.results[0][0].transcript.trim();
+    if(!transcript) { if(_taraConvoActive) _taraListenLoop(); return; }
     _taraVoiceRecognition = null;
-    _taraHideListeningHint();
+    _taraBlob.speakTarget = 0.2;
+    _taraShowListeningHint('💬 Thinking…');
     await taraVoiceOnlyReply(transcript);
+    // After TARA finishes speaking, listen again automatically
+    if(_taraConvoActive){
+      // Wait for speech to finish before re-listening
+      const checkDone = setInterval(()=>{
+        if(_taraBlob.speakTarget < 0.05){
+          clearInterval(checkDone);
+          if(_taraConvoActive) setTimeout(_taraListenLoop, 400);
+        }
+      }, 200);
+    }
   };
 
   rec.onerror = (e) => {
-    _taraBlob.speakTarget = 0;
     _taraVoiceRecognition = null;
-    _taraHideListeningHint();
-    if(e.error === 'no-speech') showToast('No speech detected — tap blob and try again');
-    else if(e.error === 'not-allowed') showToast('Microphone blocked — check browser permissions');
-    else showToast('Mic error: ' + e.error);
+    if(e.error === 'no-speech'){
+      // No speech detected — just listen again
+      if(_taraConvoActive) setTimeout(_taraListenLoop, 300);
+    } else if(e.error === 'not-allowed'){
+      _taraConvoActive = false;
+      _taraHideListeningHint();
+      showToast('Microphone blocked — check browser permissions');
+    } else {
+      if(_taraConvoActive) setTimeout(_taraListenLoop, 500);
+    }
   };
 
   rec.onend = () => {
-    _taraBlob.speakTarget = 0;
-    _taraHideListeningHint();
-    if(_taraVoiceRecognition){ _taraVoiceRecognition = null; }
+    // onresult handles restart — only restart here if no result came
+    if(_taraVoiceRecognition === rec){
+      _taraVoiceRecognition = null;
+      if(_taraConvoActive) setTimeout(_taraListenLoop, 300);
+    }
   };
 
-  try { rec.start(); } catch(e){ showToast('Could not start mic: ' + e.message); }
+  try { rec.start(); } catch(err){
+    showToast('Mic error: ' + err.message);
+    _taraConvoActive = false;
+    _taraHideListeningHint();
+  }
 }
 
-function _taraShowListeningHint(){
+function _taraShowListeningHint(msg){
   let hint = document.getElementById('taraListeningHint');
   if(!hint){
     hint = document.createElement('div');
     hint.id = 'taraListeningHint';
-    hint.style.cssText = 'position:fixed;bottom:140px;right:20px;z-index:8001;background:#e8241a;color:#fff;font-family:Barlow,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;padding:8px 16px;border-radius:20px;box-shadow:0 4px 16px rgba(232,36,26,0.4);animation:taraPulse 1s ease infinite;pointer-events:none';
-    hint.textContent = '🎤 Listening…';
+    hint.style.cssText = 'position:fixed;bottom:200px;right:20px;z-index:8001;background:#e8241a;color:#fff;font-family:Barlow,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;padding:8px 16px;border-radius:20px;box-shadow:0 4px 16px rgba(232,36,26,0.4);pointer-events:none';
     document.body.appendChild(hint);
   }
+  hint.textContent = msg || '🎤 Listening…';
   hint.style.display = 'block';
 }
 
