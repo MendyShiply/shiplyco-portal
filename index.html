@@ -1692,33 +1692,53 @@ function _taraStartBlob(){
 const TARA_VOICE_URL='https://xyemghdkehsfgeyidmie.supabase.co/functions/v1/tara-voice';
 const TARA_SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5ZW1naGRrZWhzZmdleWlkbWllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NjE3NTIsImV4cCI6MjA4ODMzNzc1Mn0.4pIvrbdbMrPIrByY9GRnDiyw15BJobPxllr8mQ0c1OA';
 
+// Create AudioContext on first user gesture and reuse (iOS requirement)
+let _taraAC = null;
+function _taraGetAC(){
+  if(!_taraAC || _taraAC.state === 'closed'){
+    _taraAC = new(window.AudioContext||window.webkitAudioContext)();
+  }
+  if(_taraAC.state === 'suspended') _taraAC.resume();
+  return _taraAC;
+}
+
 async function taraSpeak(text){
   if(!text||text.length<2) return;
   if(TARA_MUTED) return;
-  // strip markdown/html tags for TTS
   const clean=text.replace(/<[^>]+>/g,' ').replace(/[*_`#\[\]]/g,'').replace(/\s+/g,' ').trim().slice(0,500);
   try{
-    if(_taraBlob.audioCtx){try{_taraBlob.audioCtx.close();}catch(e){} _taraBlob.audioCtx=null;_taraBlob.analyser=null;_taraBlob.freqData=null;}
+    // Stop any current audio
+    if(_taraBlob.currentSrc){try{_taraBlob.currentSrc.stop();}catch(e){}}
+    _taraBlob.currentSrc=null;_taraBlob.analyser=null;_taraBlob.freqData=null;
+
     const res=await fetch(TARA_VOICE_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+TARA_SUPABASE_ANON},
       body:JSON.stringify({text:clean})
     });
-    if(!res.ok) return;
+    if(!res.ok){ console.warn('Voice fetch failed:',res.status); return; }
     const buf=await res.arrayBuffer();
-    const ac=new(window.AudioContext||window.webkitAudioContext)();
-    _taraBlob.audioCtx=ac;
+    const ac=_taraGetAC();
     const analyser=ac.createAnalyser();
     analyser.fftSize=512;
     _taraBlob.analyser=analyser;
     _taraBlob.freqData=new Uint8Array(analyser.frequencyBinCount);
-    const decoded=await ac.decodeAudioData(buf);
+    const decoded=await ac.decodeAudioData(buf.slice(0));
     const src=ac.createBufferSource();
     src.buffer=decoded;
     src.connect(analyser);
     analyser.connect(ac.destination);
-    src.start();
-    src.onended=()=>{_taraBlob.analyser=null;_taraBlob.freqData=null;_taraBlob.speakTarget=0;};
+    _taraBlob.currentSrc=src;
+    src.start(0);
+    return new Promise(resolve=>{
+      src.onended=()=>{
+        _taraBlob.analyser=null;
+        _taraBlob.freqData=null;
+        _taraBlob.speakTarget=0;
+        _taraBlob.currentSrc=null;
+        resolve();
+      };
+    });
   }catch(e){console.warn('TARA voice error:',e);}
 }
 
@@ -1772,6 +1792,17 @@ function taraBlobClick(){
 
 let _taraConvoActive = false; // continuous convo mode
 
+const _taraGreetings = [
+  "Hey, what do you need?",
+  "I'm listening — go ahead.",
+  "What's up?",
+  "Talk to me.",
+  "Go ahead, I'm here.",
+  "What can I help with?",
+  "Ready when you are.",
+];
+let _taraGreetIdx = 0;
+
 function taraStartVoiceOnly(){
   if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){
     showToast('Voice not supported — use Chrome or Safari');
@@ -1783,8 +1814,22 @@ function taraStartVoiceOnly(){
     _taraStopConvo();
     return;
   }
+  // Init AudioContext immediately from user gesture (iOS requirement)
+  _taraGetAC();
   _taraConvoActive = true;
-  _taraListenLoop();
+  // Greet with rotating phrases
+  const greeting = _taraGreetings[_taraGreetIdx % _taraGreetings.length];
+  _taraGreetIdx++;
+  // Resume AudioContext on user gesture (iOS)
+  if(_taraAC && _taraAC.state === 'suspended') _taraAC.resume();
+  // Speak greeting then listen when done
+  taraSpeak(greeting).then(()=>{
+    if(_taraConvoActive) _taraListenLoop();
+  }).catch(()=>{
+    if(_taraConvoActive) setTimeout(_taraListenLoop, 800);
+  });
+  // Safety fallback if greeting takes too long
+  setTimeout(()=>{ if(_taraConvoActive && !_taraVoiceRecognition) _taraListenLoop(); }, 4000);
 }
 
 function _taraStopConvo(){
@@ -1804,52 +1849,80 @@ function _taraListenLoop(){
   const rec = new SR();
   rec.lang = 'en-US';
   rec.continuous = false;
-  rec.interimResults = false;
+  rec.interimResults = true; // get partial results to detect speech faster
   rec.maxAlternatives = 1;
   _taraVoiceRecognition = rec;
   _taraBlob.speakTarget = 0.45;
   _taraShowListeningHint('🎤 Listening…');
+  let _gotResult = false;
+  let _finalTranscript = '';
+  let _silenceTimer = null;
 
-  rec.onresult = async (e) => {
-    const transcript = e.results[0][0].transcript.trim();
-    if(!transcript) { if(_taraConvoActive) _taraListenLoop(); return; }
-    _taraVoiceRecognition = null;
-    _taraBlob.speakTarget = 0.2;
-    _taraShowListeningHint('💬 Thinking…');
-    await taraVoiceOnlyReply(transcript);
-    // After TARA finishes speaking, listen again automatically
-    if(_taraConvoActive){
-      // Wait for speech to finish before re-listening
-      const checkDone = setInterval(()=>{
-        if(_taraBlob.speakTarget < 0.05){
-          clearInterval(checkDone);
-          if(_taraConvoActive) setTimeout(_taraListenLoop, 400);
-        }
-      }, 200);
+  rec.onresult = (e) => {
+    let interim = '';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal){
+        _finalTranscript += e.results[i][0].transcript;
+      } else {
+        interim += e.results[i][0].transcript;
+      }
+    }
+    // Show blob reacting while user speaks
+    if(interim || _finalTranscript) _taraBlob.speakTarget = 0.3;
+    // If we have a final result, process immediately
+    if(_finalTranscript && !_gotResult){
+      _gotResult = true;
+      clearTimeout(_silenceTimer);
+      _taraVoiceRecognition = null;
+      try{ rec.stop(); }catch(e){}
+      _processTranscript(_finalTranscript.trim());
     }
   };
 
   rec.onerror = (e) => {
     _taraVoiceRecognition = null;
+    clearTimeout(_silenceTimer);
     if(e.error === 'no-speech'){
-      // No speech detected — just listen again
-      if(_taraConvoActive) setTimeout(_taraListenLoop, 300);
+      if(_taraConvoActive) setTimeout(_taraListenLoop, 200);
     } else if(e.error === 'not-allowed'){
       _taraConvoActive = false;
       _taraHideListeningHint();
       showToast('Microphone blocked — check browser permissions');
     } else {
-      if(_taraConvoActive) setTimeout(_taraListenLoop, 500);
+      if(_taraConvoActive) setTimeout(_taraListenLoop, 300);
     }
   };
 
   rec.onend = () => {
-    // onresult handles restart — only restart here if no result came
-    if(_taraVoiceRecognition === rec){
+    clearTimeout(_silenceTimer);
+    if(!_gotResult){
       _taraVoiceRecognition = null;
-      if(_taraConvoActive) setTimeout(_taraListenLoop, 300);
+      if(_finalTranscript.trim() && !_gotResult){
+        _gotResult = true;
+        _processTranscript(_finalTranscript.trim());
+      } else if(_taraConvoActive){
+        setTimeout(_taraListenLoop, 200);
+      }
     }
   };
+
+  async function _processTranscript(text){
+    if(!text){ if(_taraConvoActive) _taraListenLoop(); return; }
+    _taraBlob.speakTarget = 0.2;
+    _taraShowListeningHint('💬 Thinking…');
+    await taraVoiceOnlyReply(text);
+    // Wait for TARA to finish speaking then listen again
+    if(_taraConvoActive){
+      const checkDone = setInterval(()=>{
+        if(_taraBlob.speakTarget < 0.05 && !_taraBlob.currentSrc){
+          clearInterval(checkDone);
+          if(_taraConvoActive) setTimeout(_taraListenLoop, 300);
+        }
+      }, 150);
+      // Safety timeout — restart after 15s regardless
+      setTimeout(()=>{ clearInterval(checkDone); if(_taraConvoActive) _taraListenLoop(); }, 15000);
+    }
+  }
 
   try { rec.start(); } catch(err){
     showToast('Mic error: ' + err.message);
@@ -1902,9 +1975,9 @@ Current context: ${TARA_ALERTS.length} alerts. Trucks in progress: ${JSON.string
     const reply = data.content?.[0]?.text || '';
     if(!reply){ taraSpeak('Sorry, I had trouble with that.'); return; }
     _taraConv.push({role:'assistant', content:reply});
-    taraSpeak(reply);
+    await taraSpeak(reply);
   } catch(e){
-    taraSpeak('Sorry, I had trouble connecting.');
+    await taraSpeak('Sorry, I had trouble connecting.');
   }
 }
 
