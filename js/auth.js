@@ -61,9 +61,10 @@ function launchApp(profile){
 
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('app').style.display='flex';
-  document.getElementById('hRole').textContent={customer:'Customer Portal',employee:'Employee Portal',admin:'Admin Portal'}[role];
-  document.getElementById('hCust').textContent=
-    role==='customer'?(profile.customer_id||'Customer'):profile.full_name||'ShiplyCo';
+  const hRole=document.getElementById('hRole');
+  const hCust=document.getElementById('hCust');
+  if(hRole) hRole.textContent={customer:'Customer Portal',employee:'Employee Portal',admin:'Admin Portal'}[role]||'';
+  if(hCust) hCust.textContent=role==='customer'?(profile.customer_id||'Customer'):profile.full_name||'ShiplyCo';
   buildNav();
   // Load customers from Supabase for use across all pages
   loadCustomers().then(()=>{ _custLoaded=true; });
@@ -122,21 +123,21 @@ sb.auth.getSession().then(({data:{session}})=>{
 
 function toggleMobileNav(){
   const nav=document.querySelector('nav');
-  const overlay=document.getElementById('navOverlay');
+  const overlay=document.getElementById('sidebarOverlay');
   if(nav){nav.classList.toggle('open');}
   if(overlay){overlay.classList.toggle('open');}
 }
 
 function closeMobileNav(){
   const nav=document.querySelector('nav');
-  const overlay=document.getElementById('navOverlay');
+  const overlay=document.getElementById('sidebarOverlay');
   if(nav){nav.classList.remove('open');}
   if(overlay){overlay.classList.remove('open');}
 }
 
 function buildNav(){
-  const n=document.getElementById('sideNav');
-  const items=NAV[role]||NAV.customer;
+  const n=document.getElementById('sbNav');
+  const items=(typeof _ownerMode!=='undefined'&&_ownerMode)?NAV.owner:(NAV[role]||NAV.customer);
   let html='<button class="nav-collapse-btn" onclick="toggleSideNav()" title="Collapse sidebar">&#x276E;</button>';
   items.forEach(i=>{
     html+='<div class="nv" id="nv-'+i.id+'" data-page="'+i.id+'" role="button" tabindex="0">'+ico(i.i,16)+'<span> '+i.l+'</span></div>';
@@ -150,19 +151,19 @@ function buildNav(){
 }
 
 function toggleSideNav(){
-  const n=document.getElementById('sideNav');
+  const n=document.getElementById('sbNav');
   n.classList.toggle('collapsed');
   localStorage.setItem('shiplyco_nav_collapsed', n.classList.contains('collapsed')?'1':'0');
 }
 function showPage(id){ closeMobileNav();
   // Close mobile nav if open
   const nav=document.querySelector('nav');
-  const overlay=document.getElementById('navOverlay');
+  const overlay=document.getElementById('sidebarOverlay');
   if(nav&&nav.classList.contains('open')){nav.classList.remove('open');}
   if(overlay&&overlay.classList.contains('open')){overlay.classList.remove('open');}
   document.querySelectorAll('.nv').forEach(e=>{e.classList.remove('on');e.removeAttribute('aria-current');});
   const el=document.getElementById('nv-'+id);if(el){el.classList.add('on');el.setAttribute('aria-current','page');}
-  const fns={customers:pgCustomers,inbound:pgInbound,dashboard:pgDash,trucks:pgTrucks,containers:pgCont,docs:pgDocs,billing:pgBilling,invoices:pgInvoices,entry:pgEntry,admin:pgAdmin,placeorder:pgPlaceOrder,myorders:pgMyOrders,dispatch:pgDispatch,inventory:pgInventory,labels:pgLabels,picklist:pgPickList,pricing:pgPricing,mytasks:pgMyTasks,leaderboard:pgLeaderboard,supplies:pgSupplies,skumaster:pgSkuMaster,marketplaces:pgMarketplaces,shipping:pgShipping,edi:pgEdi,bol:pgBol,cyclecounts:pgCycleCounts,reports:pgReports,twilio:pgTwilio,ai:pgAi,locations:pgLocations};
-  document.getElementById('mainContent').innerHTML=`<div class="page">${(fns[id]||pgDash)()}</div>`;
+  const fns={customers:pgCustomers,inbound:pgInbound,dashboard:pgDash,trucks:pgTrucks,containers:pgCont,docs:pgDocs,billing:pgBilling,invoices:pgInvoices,entry:pgEntry,admin:pgAdmin,placeorder:pgPlaceOrder,myorders:pgMyOrders,dispatch:pgDispatch,inventory:pgInventory,labels:pgLabels,picklist:pgPickList,pricing:pgPricing,mytasks:pgMyTasks,leaderboard:pgLeaderboard,supplies:pgSupplies,skumaster:pgSkuMaster,marketplaces:pgMarketplaces,shipping:pgShipping,edi:pgEdi,bol:pgBol,cyclecounts:pgCycleCounts,reports:pgReports,twilio:pgTwilio,ai:pgAi,locations:pgLocations,ownerdash:pgOwnerDash,ownerinv:pgOwnerInventory,ownerentry:pgOwnerEntry,ownerorders:pgOwnerOrders};
+  document.getElementById('page').innerHTML=`<div class="page">${(fns[id]||pgDash)()}</div>`;
   if(id==='entry'){palletCount=1;itemCounts={}}
 }

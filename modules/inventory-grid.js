@@ -611,6 +611,7 @@ td.wrap{white-space:normal;max-width:none}
 <script>
 // ── INVENTORY DATA GRID ──
 let _invFilters = {search:'', cust:'', truck:''};
+let _disposeSelected = new Set();
 let _invColFilters = {};
 let _invSort = 'pallet_num';
 let _invSortDir = 1;
@@ -802,7 +803,14 @@ function renderInvTable(){
       const bg = isNewPallet && itemIdx===0 ? '' : 'background:rgba(0,0,0,0.015)';
       const borderTop = isNewPallet && itemIdx===0 && rows.indexOf(rows.find(r=>r.p.id===p.id)) > 0
         ? 'border-top:2px solid var(--border2)' : '';
-      rowsHtml += '<tr style="border-bottom:1px solid var(--border);'+bg+'">';
+      const dispChecked = role==='customer' && _disposeSelected.has(String(p.id));
+      rowsHtml += '<tr style="border-bottom:1px solid var(--border);'+bg+(dispChecked?';background:var(--red-light)':'')+'">';
+      if(role==='customer'){
+        rowsHtml += '<td style="width:36px;min-width:36px;padding:0;text-align:center;cursor:pointer" onclick="event.stopPropagation();toggleDisposeRow(\''+p.id+'\')">'
+          +'<input type="checkbox"'+(dispChecked?' checked':'')
+          +' style="width:15px;height:15px;accent-color:var(--red);cursor:pointer;pointer-events:none;margin:0" tabindex="-1"/>'
+          +'</td>';
+      }
       visibleCols.forEach(col=>{
         const v = vals[col.key]||'—';
         const w = _invColWidths[col.key]||120;
@@ -842,7 +850,11 @@ function _renderInvHeaders(visibleCols){
   if(!visibleCols) visibleCols = _invCols.filter(c=>c.visible);
   const sortRow = document.getElementById('invSortRow');
   if(sortRow){
-    sortRow.innerHTML = visibleCols.map(col=>{
+    const cbTh = role==='customer'
+      ? '<th style="width:36px;min-width:36px;padding:8px;text-align:center;background:var(--surface2);border-right:3px solid var(--border2);cursor:default" title="Select all">'
+        +'<input type="checkbox" id="invDisposeAll" onchange="toggleDisposeAll(this.checked)" style="width:14px;height:14px;accent-color:var(--red);cursor:pointer"/></th>'
+      : '';
+    sortRow.innerHTML = cbTh + visibleCols.map(col=>{
       const arrow = _invSort===col.key ? (_invSortDir===1?'↑':'↓') : '↕';
       const w = _invColWidths[col.key]||120;
       return '<th draggable="true" data-colkey="'+col.key+'"'
@@ -864,7 +876,10 @@ function _renderInvHeaders(visibleCols){
   }
   const filterRow = document.getElementById('invFilterRow');
   if(filterRow){
-    filterRow.innerHTML = visibleCols.map(col=>{
+    const cbFilterTh = role==='customer'
+      ? '<th style="width:36px;min-width:36px;background:var(--bg);border-right:3px solid var(--border2)"></th>'
+      : '';
+    filterRow.innerHTML = cbFilterTh + visibleCols.map(col=>{
       const val = _invColFilters[col.key]||'';
       const w = _invColWidths[col.key]||120;
       return '<th style="padding:4px 6px;width:'+w+'px;min-width:'+w+'px;background:var(--bg);border-right:3px solid var(--border2)">'
@@ -982,7 +997,14 @@ function _renderInvBody(){
     rows.forEach(({p, item, vals})=>{
       const isNewPallet = p.id!==prevPalletId;
       prevPalletId = p.id;
-      html += '<tr style="border-bottom:1px solid var(--border)'+(isNewPallet?';border-top:2px solid var(--border2)':'')+'">';
+      const dispChecked2 = role==='customer' && _disposeSelected.has(String(p.id));
+      html += '<tr style="border-bottom:1px solid var(--border)'+(isNewPallet?';border-top:2px solid var(--border2)':'')+(dispChecked2?';background:var(--red-light)':'')+'">';
+      if(role==='customer'){
+        html += '<td style="width:36px;min-width:36px;padding:0;text-align:center;cursor:pointer" onclick="event.stopPropagation();toggleDisposeRow(\''+p.id+'\')">'
+          +'<input type="checkbox"'+(dispChecked2?' checked':'')
+          +' style="width:15px;height:15px;accent-color:var(--red);cursor:pointer;pointer-events:none;margin:0" tabindex="-1"/>'
+          +'</td>';
+      }
       visibleCols.forEach(col=>{
         const v = vals[col.key]||'—';
         const w = _invColWidths[col.key]||120;

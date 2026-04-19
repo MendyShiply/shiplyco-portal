@@ -46,18 +46,52 @@ function renderDispatchBoard(orders){
     return;
   }
 
-  const typeIcons  = {pallet_out:'🚚',pickpack:'📦',fbm:'📦',fba:'🏭',marketplace:'📦'};
-  const typeLabels = {pallet_out:'Pallet Outbound',pickpack:'Pick & Pack',fbm:'Pick & Pack',fba:'FBA Prep',marketplace:'Pick & Pack'};
+  const typeIcons  = {pallet_out:'🚚',pickpack:'📦',fbm:'📦',fba:'🏭',marketplace:'📦',disposal:'🗑'};
+  const typeLabels = {pallet_out:'Pallet Outbound',pickpack:'Pick & Pack',fbm:'Pick & Pack',fba:'FBA Prep',marketplace:'Pick & Pack',disposal:'Disposal Request'};
 
-  // Group: Unassigned first, then by assignee
+  // Pull out disposal orders and render them first in their own section
+  const disposalOrders = orders.filter(o=>o.type==='disposal'&&o.status==='disposal_pending');
+  const regularOrders  = orders.filter(o=>o.type!=='disposal');
+
+  let html = '';
+
+  if(disposalOrders.length){
+    html += `
+    <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--orange);margin-bottom:10px">
+      🗑 Disposal Requests — ${disposalOrders.length} pending confirmation
+    </div>`;
+    disposalOrders.forEach(o=>{
+      const cust=CUSTOMERS.find(c=>c.id===o.cust_id);
+      const items=Array.isArray(o.items)?o.items:(typeof o.items==='string'?JSON.parse(o.items||'[]'):[]);
+      html+=`
+      <div class="card" style="margin-bottom:10px;border-left:4px solid var(--orange)">
+        <div style="padding:14px 18px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+              <span style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800">🗑 ${o.id}</span>
+              <span class="tag to">DISPOSAL PENDING</span>
+            </div>
+            <div style="font-size:13px;font-weight:600;color:var(--ink2)">${cust?.name||o.cust_id||'—'} · ${items.length} pallet${items.length!==1?'s':''}</div>
+            ${items.length?`<div style="font-size:12px;color:var(--ink3);margin-top:4px">${items.map(i=>'PLT-'+String(i.pallet_num||'').padStart(3,'0')+' · '+(i.desc||'—')+' @ '+(i.location||'—')).join('<br>')}</div>`:''}
+            ${o.charge_total?`<div style="font-size:12px;font-weight:700;color:var(--red);margin-top:6px">Disposal fee: ${fmt(o.charge_total)}</div>`:''}
+            ${o.notes?`<div style="font-size:11px;color:var(--ink3);margin-top:4px;font-style:italic">📝 ${o.notes}</div>`:''}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+            <button class="btn btn-red" style="font-size:12px;padding:8px 18px" onclick="confirmDisposal('${o.id}')">✓ Confirm Disposal</button>
+          </div>
+        </div>
+      </div>`;
+    });
+    html += '<div style="border-top:2px solid var(--border2);margin:18px 0 14px"></div>';
+  }
+
+  // Group regular orders: Unassigned first, then by assignee
   const groups = {};
-  orders.forEach(o=>{
+  regularOrders.forEach(o=>{
     const key = o.assigned_to||'__unassigned__';
     if(!groups[key]) groups[key]=[];
     groups[key].push(o);
   });
-
-  let html = '';
 
   // Unassigned section
   if(groups['__unassigned__']?.length){
@@ -1152,4 +1186,86 @@ function showToast(msg){
   if(!t){t=document.createElement('div');t.id='toast';t.setAttribute('role','status');t.setAttribute('aria-live','polite');t.setAttribute('aria-atomic','true');t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 24px;border-radius:8px;font-size:13px;font-weight:600;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,0.3)';document.body.appendChild(t)}
   t.textContent=msg;t.style.opacity='1';
   setTimeout(()=>{t.style.opacity='0'},3500);
+}
+
+// ── DISPOSAL CONFIRMATION ──
+async function confirmDisposal(orderId){
+  confirmAction(`Confirm disposal for order ${orderId}? This will remove items from inventory and add disposal charges to the customer's invoice.`, async()=>{
+    try{
+      // Load the disposal order
+      const {data:order,error:oErr}=await sb.from('orders').select('*').eq('id',orderId).single();
+      if(oErr) throw oErr;
+
+      const palletIds=Array.isArray(order.pallets)?order.pallets:[];
+
+      // 1. Move pallets to ShiplyCo internal inventory (set owner=true, clear cust_id)
+      if(palletIds.length){
+        const {error:pErr}=await sb.from('pallets')
+          .update({
+            owner: true,
+            disposed_at: new Date().toISOString(),
+            disposed_from_cust_id: order.cust_id,
+            cust_id: OWNER_CUST_ID
+          })
+          .in('id', palletIds);
+        if(pErr) throw pErr;
+      }
+
+      // 2. Mark the order as disposed
+      const {error:uErr}=await sb.from('orders').update({
+        status:'disposed',
+        confirmed_by: currentEmployee?.name||role,
+        confirmed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }).eq('id',orderId);
+      if(uErr) throw uErr;
+
+      // 3. Auto-add disposal charges to the customer's invoice
+      await addDisposalChargeToInvoice(order.cust_id, order.charge_lines||[], order.charge_total||0, orderId);
+
+      showToast(`✓ Disposal confirmed — ${palletIds.length} pallet${palletIds.length!==1?'s':''} removed from inventory · charges added to invoice`);
+      refreshDispatch();
+    }catch(e){
+      showToast('⚠ Error confirming disposal: '+e.message);
+    }
+  });
+}
+
+async function addDisposalChargeToInvoice(custId, chargeLines, chargeTotal, orderId){
+  try{
+    // Find the most recent open (due/draft) invoice for this customer
+    const {data:invs}=await sb.from('invoices')
+      .select('*')
+      .eq('customer_id',custId)
+      .in('status',['due','draft'])
+      .order('created_at',{ascending:false})
+      .limit(1);
+
+    const dispLine={desc:`Disposal — Order ${orderId}`,qty:1,rate:chargeTotal,amt:chargeTotal};
+
+    if(invs&&invs.length){
+      // Append to existing open invoice
+      const inv=invs[0];
+      const existingLines=Array.isArray(inv.Lines)?inv.Lines:[];
+      const newLines=[...existingLines,dispLine];
+      const newTotal=(inv.total||0)+chargeTotal;
+      await sb.from('invoices').update({Lines:newLines,total:newTotal,updated_at:new Date().toISOString()}).eq('id',inv.id);
+    } else {
+      // Create a new invoice with the disposal charge
+      const invNum='INV-DSP-'+String(Date.now()).slice(-5);
+      const due=new Date(); due.setDate(due.getDate()+30);
+      await sb.from('invoices').insert([{
+        id:invNum,
+        customer_id:custId,
+        period:new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'}),
+        due_date:due.toISOString().split('T')[0],
+        status:'due',
+        Lines:[dispLine],
+        total:chargeTotal,
+        created_at:new Date().toISOString()
+      }]);
+    }
+  }catch(e){
+    console.warn('Invoice charge error:',e.message);
+  }
 }

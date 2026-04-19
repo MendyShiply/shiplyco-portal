@@ -468,21 +468,34 @@ function renderOrdersPage(orders){
   const wrap = document.getElementById('ordersPageWrap');
   if(!wrap) return;
   const isStaff = role==='employee'||role==='admin';
+  const activeTab = document.getElementById('ordersTabActive')?.value||'orders';
+
+  // Split disposal from regular orders for customer view
+  const disposalOrders = orders.filter(o=>o.type==='disposal');
+  const regularOrders = orders.filter(o=>o.type!=='disposal');
+
+  if(!isStaff && activeTab==='disposed'){
+    renderDisposedHistory(disposalOrders);
+    return;
+  }
+
+  const workingOrders = isStaff ? orders : regularOrders;
+
   const steps = ['Pending','Processed','Picked Up'];
   const stepKey = ['pending','processed','picked_up'];
-  const typeIcons = {pallet_out:'🚚',pickpack:'📦',fbm:'📦',fba:'🏭',marketplace:'📦'};
-  const typeLabels = {pallet_out:'Pallet Pickup',pickpack:'Pick & Pack',fbm:'Pick & Pack',fba:'FBA Prep',marketplace:'Pick & Pack'};
+  const typeIcons = {pallet_out:'🚚',pickpack:'📦',fbm:'📦',fba:'🏭',marketplace:'📦',disposal:'🗑'};
+  const typeLabels = {pallet_out:'Pallet Pickup',pickpack:'Pick & Pack',fbm:'Pick & Pack',fba:'FBA Prep',marketplace:'Pick & Pack',disposal:'Disposal Request'};
 
   const filterStatus = document.getElementById('ordersStatusFilter')?.value||'all';
   const filterSearch = document.getElementById('ordersSearch')?.value?.toLowerCase()||'';
-  let list = orders;
+  let list = workingOrders;
   if(filterStatus!=='all') list = list.filter(o=>o.status===filterStatus);
   if(filterSearch) list = list.filter(o=>o.id?.toLowerCase().includes(filterSearch)||o.channel?.toLowerCase().includes(filterSearch)||o.type?.toLowerCase().includes(filterSearch));
 
   // Update stat counts
-  document.getElementById('oStatPending').textContent  = orders.filter(o=>o.status==='pending').length;
-  document.getElementById('oStatProcessed').textContent= orders.filter(o=>o.status==='processed').length;
-  document.getElementById('oStatDone').textContent     = orders.filter(o=>o.status==='picked_up').length;
+  document.getElementById('oStatPending').textContent  = workingOrders.filter(o=>o.status==='pending').length;
+  document.getElementById('oStatProcessed').textContent= workingOrders.filter(o=>o.status==='processed').length;
+  document.getElementById('oStatDone').textContent     = workingOrders.filter(o=>o.status==='picked_up').length;
 
   if(!list.length){
     wrap.innerHTML=`<div style="padding:40px;text-align:center;color:var(--ink3)">No orders found</div>`;
@@ -490,31 +503,67 @@ function renderOrdersPage(orders){
   }
 
   wrap.innerHTML = list.map(o=>{
-    const curStep = stepKey.indexOf(o.status);
+    const isDisposal = o.type==='disposal';
+    const curStep = isDisposal ? -1 : stepKey.indexOf(o.status);
     const items = Array.isArray(o.items)?o.items:(typeof o.items==='string'?JSON.parse(o.items||'[]'):[]);
     const cust = CUSTOMERS.find(c=>c.id===o.cust_id);
-    return `<div class="order-card">
+    const statusTag = o.status==='disposal_pending'?'<span class="tag to">DISPOSAL PENDING</span>'
+      : o.status==='disposed'?'<span class="tag tg">DISPOSED</span>'
+      : o.status==='picked_up'?'<span class="tag tg">PICKED UP</span>'
+      : o.status==='processed'?'<span class="tag tb">PROCESSED</span>'
+      : '<span class="tag to">'+(o.status||'').replace(/_/g,' ').toUpperCase()+'</span>';
+
+    const chargeTotal = o.charge_total ? `<div style="font-size:12px;color:var(--red);font-weight:700;margin-top:4px">Disposal fee: ${fmt(o.charge_total)}</div>` : '';
+
+    return `<div class="order-card"${isDisposal?' style="border-left:4px solid var(--orange)"':''}>
       <div class="order-card-head">
         <div>
           <div class="order-id">${typeIcons[o.type]||'📦'} ${o.id} · ${typeLabels[o.type]||o.type}</div>
-          <div class="order-meta">${cust?.name||o.cust_id||'—'} · ${o.channel||'—'} · ${o.date||'—'}${o.time?' · '+o.time+' slot':''}</div>
+          <div class="order-meta">${cust?.name||o.cust_id||'—'} · ${o.date||'—'}</div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span class="tag ${o.status==='picked_up'?'tg':o.status==='processed'?'tb':'to'}">${(o.status||'').replace('_',' ').toUpperCase()}</span>
-        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">${statusTag}</div>
       </div>
       <div style="padding:13px 18px">
         ${o.notes?`<div style="font-size:12px;color:var(--ink3);margin-bottom:8px">📝 ${o.notes}</div>`:''}
-        ${o.pallets?`<div style="font-size:13px;color:var(--ink2);margin-bottom:8px">${o.pallets} pallet${o.pallets>1?'s':''}</div>`:''}
-        ${items.length?`<div style="font-size:12px;color:var(--ink2);margin-bottom:8px">${items.map(i=>`${i.desc||i.sku} × ${i.qty}`).join(', ')}</div>`:''}
-        <div class="status-track">
+        ${isDisposal&&items.length?`<div style="font-size:12px;color:var(--ink2);margin-bottom:6px">${items.map(i=>`PLT-${String(i.pallet_num||'').padStart(3,'0')} · ${i.desc||'—'}`).join('<br>')}</div>`:''}
+        ${!isDisposal&&items.length?`<div style="font-size:12px;color:var(--ink2);margin-bottom:8px">${items.map(i=>`${i.desc||i.sku} × ${i.qty}`).join(', ')}</div>`:''}
+        ${chargeTotal}
+        ${!isDisposal?`<div class="status-track">
           ${steps.map((s,i)=>`
             ${i>0?`<div class="st-line ${i<=curStep?'done':''}"></div>`:''}
             <div class="st-step ${i<curStep?'done':i===curStep?'active':''}">
               <div class="st-dot">${i<curStep?'✓':i+1}</div>
               <span style="white-space:nowrap">${s}</span>
             </div>`).join('')}
+        </div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderDisposedHistory(disposalOrders){
+  const wrap=document.getElementById('ordersPageWrap');
+  if(!wrap) return;
+  if(!disposalOrders.length){
+    wrap.innerHTML='<div style="padding:48px;text-align:center;color:var(--ink3)"><div style="font-size:36px;margin-bottom:12px">🗑</div><div style="font-weight:700;font-size:15px">No disposal history</div><div style="font-size:13px;margin-top:6px">Items you request disposal of will appear here.</div></div>';
+    return;
+  }
+  wrap.innerHTML=disposalOrders.map(o=>{
+    const items=Array.isArray(o.items)?o.items:(typeof o.items==='string'?JSON.parse(o.items||'[]'):[]);
+    const statusColor=o.status==='disposed'?'var(--green)':'var(--orange)';
+    const statusLabel=o.status==='disposed'?'Disposed':'Pending Confirmation';
+    return `<div class="order-card" style="border-left:4px solid ${statusColor}">
+      <div class="order-card-head">
+        <div>
+          <div class="order-id">🗑 ${o.id} · Disposal Request</div>
+          <div class="order-meta">${new Date(o.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
         </div>
+        <span class="tag ${o.status==='disposed'?'tg':'to'}">${statusLabel.toUpperCase()}</span>
+      </div>
+      <div style="padding:13px 18px">
+        ${items.length?`<div style="font-size:12px;color:var(--ink2);margin-bottom:8px">${items.map(i=>`PLT-${String(i.pallet_num||'').padStart(3,'0')} · ${i.desc||'—'}`).join('<br>')}</div>`:''}
+        ${o.charge_total?`<div style="font-size:13px;font-weight:700;color:var(--red)">Total charged: ${fmt(o.charge_total)}</div>`:''}
+        ${o.status==='disposed'&&o.confirmed_at?`<div style="font-size:11px;color:var(--ink3);margin-top:4px">Confirmed ${new Date(o.confirmed_at).toLocaleDateString()}</div>`:''}
       </div>
     </div>`;
   }).join('');
@@ -557,7 +606,18 @@ function pgMyOrders(){
     <div class="stat"><div class="stat-lbl">Processed</div><div class="stat-val" id="oStatProcessed">—</div><span class="tag tb">Ready for pickup</span></div>
     <div class="stat"><div class="stat-lbl">Picked Up</div><div class="stat-val" id="oStatDone">—</div><span class="tag tg">Completed</span></div>
   </div>
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+
+  ${!isStaff?`
+  <!-- Customer tabs: My Orders | Disposed Items -->
+  <input type="hidden" id="ordersTabActive" value="orders"/>
+  <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border)">
+    <button id="tabOrders" onclick="document.getElementById('ordersTabActive').value='orders';document.getElementById('tabOrders').style.cssText='padding:8px 20px;border:none;border-bottom:2px solid var(--red);background:none;font-family:Barlow,sans-serif;font-size:13px;font-weight:700;color:var(--red);cursor:pointer;margin-bottom:-2px';document.getElementById('tabDisposed').style.cssText='padding:8px 20px;border:none;background:none;font-family:Barlow,sans-serif;font-size:13px;color:var(--ink3);cursor:pointer';renderOrdersPage(_sbOrders)"
+      style="padding:8px 20px;border:none;border-bottom:2px solid var(--red);background:none;font-family:Barlow,sans-serif;font-size:13px;font-weight:700;color:var(--red);cursor:pointer;margin-bottom:-2px">My Orders</button>
+    <button id="tabDisposed" onclick="document.getElementById('ordersTabActive').value='disposed';document.getElementById('tabDisposed').style.cssText='padding:8px 20px;border:none;border-bottom:2px solid var(--red);background:none;font-family:Barlow,sans-serif;font-size:13px;font-weight:700;color:var(--red);cursor:pointer;margin-bottom:-2px';document.getElementById('tabOrders').style.cssText='padding:8px 20px;border:none;background:none;font-family:Barlow,sans-serif;font-size:13px;color:var(--ink3);cursor:pointer';renderOrdersPage(_sbOrders)"
+      style="padding:8px 20px;border:none;background:none;font-family:Barlow,sans-serif;font-size:13px;color:var(--ink3);cursor:pointer">🗑 Disposed Items</button>
+  </div>`:''}
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px" id="ordersFilterBar">
     <input type="text" id="ordersSearch" placeholder="Search order ID, channel…"
       oninput="renderOrdersPage(_sbOrders)"
       style="flex:1;min-width:160px;padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-family:Barlow,sans-serif;font-size:13px"/>

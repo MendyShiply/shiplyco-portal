@@ -59,7 +59,6 @@ function pgInventory(){
       <button class="btn" onclick="loadInventory().then(()=>showPage('inventory'))">↻ Refresh</button>
       <button class="btn" onclick="toggleColPicker()">⚙ Columns</button>
       <button class="btn btn-red" onclick="exportInvCSV()">⬇ Export CSV</button>
-      ${role==='customer'?'<button class="btn" onclick="openDisposeModal()" style="background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange)">🗑 Request Disposal</button>':''}
     </div>
   </div>
 
@@ -106,7 +105,15 @@ function pgInventory(){
       </table>
     </div>
     <div id="invTableFooter" style="padding:10px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--ink3);display:flex;justify-content:space-between;background:var(--surface2)"></div>
-  </div>`;
+  </div>
+
+  ${role==='customer'?`
+  <!-- Floating disposal action bar -->
+  <div id="disposeBar" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:13px 20px;border-radius:12px;box-shadow:0 6px 28px rgba(0,0,0,0.35);z-index:500;align-items:center;gap:16px;white-space:nowrap">
+    <span id="disposeBarCount" style="font-weight:700;font-size:13px"></span>
+    <button onclick="openDisposeModal()" style="background:var(--red);color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-family:Barlow,sans-serif;font-weight:700;font-size:13px">🗑 Request Disposal</button>
+    <button onclick="_disposeSelected.clear();updateDisposeBar();renderInvTable()" style="background:transparent;color:#aaa;border:1px solid #444;padding:7px 14px;border-radius:8px;cursor:pointer;font-family:Barlow,sans-serif;font-size:12px">Cancel</button>
+  </div>`:''}`;
 }
 
 
@@ -400,5 +407,118 @@ function finishPick(locId){
   if(n>0&&loc)showToast(`✓ Pick complete — ${n} unit${n!==1?'s':''} removed from ${locId} · ${invUnits(loc)} remaining`);
   activePick=null;
   showPage('inventory');
+}
+
+// ── DISPOSAL REQUEST SYSTEM ──
+
+function toggleDisposeRow(palletId){
+  const pid=String(palletId);
+  if(_disposeSelected.has(pid)) _disposeSelected.delete(pid);
+  else _disposeSelected.add(pid);
+  updateDisposeBar();
+  // Refresh just the tbody so filters/headers stay intact
+  if(typeof _renderInvBody==='function') _renderInvBody();
+  else renderInvTable();
+}
+
+function toggleDisposeAll(checked){
+  if(checked){
+    _sbPallets
+      .filter(p=>!currentCustId||String(p.cust_id)===String(currentCustId))
+      .forEach(p=>_disposeSelected.add(String(p.id)));
+  } else {
+    _disposeSelected.clear();
+  }
+  updateDisposeBar();
+  if(typeof _renderInvBody==='function') _renderInvBody();
+  else renderInvTable();
+}
+
+function updateDisposeBar(){
+  const bar=document.getElementById('disposeBar');
+  if(!bar) return;
+  const n=_disposeSelected.size;
+  if(n===0){ bar.style.display='none'; return; }
+  bar.style.display='flex';
+  document.getElementById('disposeBarCount').textContent=n+' pallet'+(n!==1?'s':'')+' selected';
+  // Sync select-all checkbox
+  const allBox=document.getElementById('invDisposeAll');
+  if(allBox){
+    const customerPallets=_sbPallets.filter(p=>!currentCustId||String(p.cust_id)===String(currentCustId));
+    allBox.checked=customerPallets.length>0&&customerPallets.every(p=>_disposeSelected.has(String(p.id)));
+    allBox.indeterminate=n>0&&!allBox.checked;
+  }
+}
+
+function openDisposeModal(){
+  if(!_disposeSelected.size){ showToast('Select at least one pallet first'); return; }
+  const pallets=_sbPallets.filter(p=>_disposeSelected.has(String(p.id)));
+  const n=pallets.length;
+  const total=n*RATES.disposal_pallet;
+
+  const listHtml=pallets.map(p=>{
+    const items=p.items||[];
+    const fi=items[0]||{};
+    const desc=fi.desc||fi.cartonDesc||'—';
+    const units=items.reduce((s,i)=>s+(parseInt(i.totalUnits)||0),0);
+    return `<div style="padding:9px 0;border-bottom:1px solid var(--border2)">
+      <span style="font-family:monospace;font-weight:800;color:var(--red)">PLT-${String(p.pallet_num).padStart(3,'0')}</span>
+      <span style="color:var(--ink3);font-size:12px"> · ${p.location||'—'}</span>
+      <div style="font-size:12px;color:var(--ink2);margin-top:2px">${desc}${items.length>1?' <span style="color:var(--ink3)">(+'+( items.length-1)+' more)</span>':''} · ${units.toLocaleString()} units</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('disposePalletList').innerHTML=listHtml;
+  document.getElementById('disposeConsentCheck').checked=false;
+  document.getElementById('disposeModal').style.display='flex';
+}
+
+function closeDisposeModal(){
+  document.getElementById('disposeModal').style.display='none';
+}
+
+async function submitDisposalRequest(){
+  if(!document.getElementById('disposeConsentCheck').checked){
+    showToast('You must agree to the terms before submitting'); return;
+  }
+  const btn=document.getElementById('disposeSubmitBtn');
+  btn.disabled=true; btn.textContent='Submitting…';
+
+  const pallets=_sbPallets.filter(p=>_disposeSelected.has(String(p.id)));
+  const n=pallets.length;
+  const total=n*RATES.disposal_pallet;
+  const chargeLines=[{desc:`Disposal — ${n} pallet${n!==1?'s':''}`,qty:n,rate:RATES.disposal_pallet,amt:total}];
+
+  const order={
+    cust_id: currentCustId||(pallets[0]?.cust_id)||null,
+    type: 'disposal',
+    status: 'disposal_pending',
+    pallets: pallets.map(p=>p.id),
+    items: pallets.map(p=>({
+      palletId:p.id,
+      pallet_num:p.pallet_num,
+      location:p.location,
+      desc:(p.items||[])[0]?.desc||(p.items||[])[0]?.cartonDesc||'—'
+    })),
+    charge_lines: chargeLines,
+    charge_total: total,
+    consent_at: new Date().toISOString(),
+    notes: `Customer-authorized disposal of ${n} pallet${n!==1?'s':''}`,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const {data,error}=await sb.from('orders').insert([order]).select().single();
+  if(error){
+    showToast('⚠ '+error.message);
+    btn.disabled=false; btn.textContent='I Agree & Submit Disposal Request';
+    return;
+  }
+
+  _disposeSelected.clear();
+  updateDisposeBar();
+  closeDisposeModal();
+  showToast('✓ Disposal request submitted — ShiplyCo will confirm within 24 hours');
+  setTimeout(()=>showPage('myorders'),1500);
 }
 

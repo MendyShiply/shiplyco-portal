@@ -30,8 +30,7 @@
         <div class="lg-sub">fulfillment</div>
       </div>
     </div>
-    <div class="lg-title">Client Portal</div>
-    <input class="lg-input" id="lgEmail" type="email" placeholder="Email address" autocomplete="email"/>
+<input class="lg-input" id="lgEmail" type="email" placeholder="Email address" autocomplete="email"/>
     <input class="lg-input" id="lgPass" type="password" placeholder="Password" autocomplete="current-password"
       onkeydown="if(event.key==='Enter')doLogin()"/>
     <button class="lg-btn" id="lgBtn" onclick="doLogin()">Sign In</button>
@@ -43,49 +42,48 @@
 <!-- ── APP ── -->
 <div id="app" style="display:none">
 
-  <!-- SIDEBAR NAV -->
-  <nav id="sidebar">
-    <div class="sb-brand">
-      <svg class="sb-hex" viewBox="0 0 60 60">
+  <header>
+    <div class="h-brand">
+      <svg class="h-hexicon" viewBox="0 0 60 60">
         <polygon points="30,3 55,17 55,43 30,57 5,43 5,17" fill="#e8241a"/>
         <rect x="22" y="20" width="16" height="3" rx="1.5" fill="white"/>
         <rect x="22" y="28.5" width="16" height="3" rx="1.5" fill="white"/>
         <rect x="22" y="37" width="16" height="3" rx="1.5" fill="white"/>
       </svg>
-      <div class="sb-wordmark">
-        <div class="sb-name">SHIPLY<span>CO</span></div>
-        <div class="sb-sub">fulfillment portal</div>
+      <div class="h-wordmark">
+        <div class="h-name">SHIPLY<span>CO</span></div>
+        <div class="h-sub">fulfillment</div>
       </div>
     </div>
-    <div class="sb-user" id="sbUser"></div>
-    <nav class="sb-nav" id="sbNav"></nav>
-    <button class="sb-logout" onclick="doLogout()">Sign Out</button>
-  </nav>
-
-  <!-- HAMBURGER (mobile) -->
-  <button class="hamburger" id="hamburger" onclick="toggleMobileNav()" aria-label="Menu">
-    <span></span><span></span><span></span>
-  </button>
-  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileNav()"></div>
-
-  <!-- MAIN CONTENT -->
-  <main id="main">
-    <div id="page"></div>
-  </main>
-
-  <!-- NOTIFICATION BELL -->
-  <div id="notifBell" style="position:fixed;top:14px;right:18px;z-index:200;display:none">
-    <button onclick="toggleNotif()" style="background:none;border:none;cursor:pointer;position:relative;padding:6px">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ink2)" stroke-width="2">
-        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-      </svg>
-      <span id="notifDot" style="display:none;position:absolute;top:4px;right:4px;width:8px;height:8px;background:#e8241a;border-radius:50%"></span>
-    </button>
-    <div id="notifPanel" style="display:none;position:absolute;right:0;top:40px;width:320px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow-lg);z-index:300">
-      <div style="padding:12px 16px;border-bottom:1px solid var(--border);font-weight:700;font-size:13px">Notifications</div>
-      <div id="notifList" style="max-height:360px;overflow-y:auto"></div>
+    <div class="h-right">
+      <button class="hamburger" id="hamburger" onclick="toggleMobileNav()" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="h-role" id="hRole"></span>
+      <span class="h-cust" id="hCust"></span>
+      <div id="notifBell" style="position:relative;display:none">
+        <button onclick="toggleNotif()" style="background:none;border:none;cursor:pointer;position:relative;padding:6px">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span id="notifDot" style="display:none;position:absolute;top:4px;right:4px;width:8px;height:8px;background:#e8241a;border-radius:50%"></span>
+        </button>
+        <div id="notifPanel" style="display:none;position:absolute;right:0;top:44px;width:320px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow-lg);z-index:300">
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border);font-weight:700;font-size:13px">Notifications</div>
+          <div id="notifList" style="max-height:360px;overflow-y:auto"></div>
+        </div>
+      </div>
+      <button class="h-out" onclick="doLogout()">Sign out</button>
     </div>
+  </header>
+
+  <div class="shell">
+    <div class="nav-overlay" id="sidebarOverlay" onclick="closeMobileNav()"></div>
+    <nav id="sbNav"></nav>
+    <main id="main">
+      <div id="page"></div>
+    </main>
   </div>
 
 </div><!-- /#app -->
@@ -123,6 +121,48 @@
   </div>
 </div>
 
+<!-- DISPOSAL CONSENT MODAL -->
+<div id="disposeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:8500;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:14px;width:90%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.3)">
+    <div style="padding:22px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px">Request Disposal</div>
+        <div style="font-size:12px;color:var(--ink3);margin-top:2px">Review items and agree to terms below</div>
+      </div>
+      <button onclick="closeDisposeModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink3);line-height:1">×</button>
+    </div>
+
+    <!-- Selected pallets -->
+    <div style="padding:18px 28px;border-bottom:1px solid var(--border)">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink3);margin-bottom:10px">Items to be Disposed</div>
+      <div id="disposePalletList"></div>
+    </div>
+
+    <!-- Legal consent -->
+    <div style="padding:18px 28px;border-bottom:1px solid var(--border)">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink3);margin-bottom:10px">Authorization & Consent</div>
+      <div style="font-size:12px;line-height:1.75;color:var(--ink2);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px 16px;max-height:180px;overflow-y:auto">
+        <strong>DISPOSAL AUTHORIZATION AGREEMENT</strong><br><br>
+        By submitting this request, I, the undersigned authorized representative of the customer of record, hereby irrevocably authorize and direct ShiplyCo Fulfillment Company, LLC, a Texas limited liability company located in Houston, Texas ("ShiplyCo"), to dispose of, destroy, donate, discard, or otherwise liquidate or sell the inventory items identified above ("Items"), at ShiplyCo's sole discretion and without further notice to the customer.<br><br>
+        The customer acknowledges and agrees that: (1) ShiplyCo shall have no obligation to recover or return the Items once this authorization is submitted; (2) the customer waives all right, title, and interest in and to the Items upon submission of this request and expressly waives any and all claims arising from or related to the disposal of such Items; (3) ShiplyCo shall not be liable to the customer for the value of the Items or any loss resulting from their disposal; (4) the applicable disposal fees set forth above shall be automatically added to the customer's next invoice and are due and payable pursuant to the customer's service agreement with ShiplyCo; and (5) this authorization is legally binding under the laws of the State of Texas.<br><br>
+        This agreement is governed by the laws of the State of Texas. Any disputes arising hereunder shall be resolved exclusively in the courts of Harris County, Texas.
+      </div>
+    </div>
+
+    <!-- Consent checkbox + actions -->
+    <div style="padding:18px 28px">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:18px">
+        <input type="checkbox" id="disposeConsentCheck" style="width:16px;height:16px;accent-color:var(--red);margin-top:2px;flex-shrink:0"/>
+        <span style="font-size:13px;color:var(--ink);line-height:1.5">I have read and agree to the Disposal Authorization Agreement above, and I am authorized to make this decision on behalf of my organization.</span>
+      </label>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn" onclick="closeDisposeModal()">Cancel</button>
+        <button class="btn btn-red" id="disposeSubmitBtn" onclick="submitDisposalRequest()">I Agree &amp; Submit Disposal Request</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── LOAD ALL MODULES ── -->
 <!-- Core -->
 <script src="modules/inventory-grid.js"></script>
@@ -150,6 +190,7 @@
 <script src="modules/reports.js"></script>
 <script src="modules/customers.js"></script>
 <script src="modules/locations.js"></script>
+<script src="modules/owner.js"></script>
 
 </body>
 </html>
