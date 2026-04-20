@@ -280,7 +280,7 @@ function renderOwnerTrucks(){
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
         <span class="tag ${t.status==='received'?'tg':t.status==='receiving'?'tb':'to'}">${(t.status||'arriving').toUpperCase()}</span>
         ${t.status!=='received'
-          ?`<button class="btn btn-red" style="font-size:11px" onclick="openOwnerPalletScan('${t.id}','${(t.name||'').replace(/'/g,'\\'')}')">📦 Scan Pallets</button>`
+          ?`<button class="btn btn-red" style="font-size:11px" onclick="openOwnerPalletScan('${t.id}','${(t.name||'').replace(/'/g,"\\'")}')">📦 Scan Pallets</button>`
           :`<button class="btn" style="font-size:11px" onclick="showPage('ownerinv')">View Inventory →</button>`}
       </div>
     </div>`).join('');
