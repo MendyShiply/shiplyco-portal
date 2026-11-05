@@ -9,10 +9,11 @@ are not claimed by someone else. Claim yours here, commit and push the claim
 
 | Agent | Folders / files | Task | Since |
 |---|---|---|---|
-| Claude Code | ENTIRE REPO | Restructuring into one folder per feature (features/<name>/). Codex: please do not edit anything until this row is gone. | 2026-11-05 |
+| _none_ | | | |
 
 ## Recently finished
 
 | Agent | What | Date |
 |---|---|---|
+| Claude Code | Split code into one folder per feature (core/, shared/, features/<name>/). Removed dead duplicate openDisposeModal. Known broken pages (pre-existing): twilio, pricing. | 2026-11-05 |
 | Claude Code | Row Level Security migration, invite + password reset fixes, test suite | 2026-11-05 |

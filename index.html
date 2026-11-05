@@ -163,34 +163,38 @@
   </div>
 </div>
 
-<!-- ── LOAD ALL MODULES ── -->
-<!-- Core -->
-<script src="js/config.js"></script>
-<script src="modules/inventory-grid.js"></script>
-<script src="js/auth.js"></script>
-
-<!-- Feature Modules -->
-<script src="modules/users.js"></script>
-<script src="modules/invoices.js"></script>
-<script src="modules/ai-assistant.js"></script>
-<script src="modules/tara.js"></script>
-<script src="modules/receiving.js"></script>
-<script src="modules/orders.js"></script>
-<script src="modules/dispatch.js"></script>
-<script src="modules/inventory.js"></script>
-<script src="modules/label-printer.js"></script>
-<script src="modules/leaderboard.js"></script>
-<script src="modules/supplies.js"></script>
-<script src="modules/sku-catalog.js"></script>
-<script src="modules/shipping.js"></script>
-<script src="modules/edi.js"></script>
-<script src="modules/marketplace.js"></script>
-<script src="modules/bol.js"></script>
-<script src="modules/cycle-counts.js"></script>
-<script src="modules/reports.js"></script>
-<script src="modules/customers.js"></script>
-<script src="modules/locations.js"></script>
-<script src="modules/owner.js"></script>
+<!-- ── SCRIPTS (order matters: core, then shared, then features) ── -->
+<script src="core/config.js"></script>
+<script src="shared/inventory-grid.js"></script>
+<script src="core/auth.js"></script>
+<script src="features/users/users.js"></script>
+<script src="features/dashboard/dashboard.js"></script>
+<script src="features/receiving/receiving.js"></script>
+<script src="features/documents/documents.js"></script>
+<script src="features/billing/billing.js"></script>
+<script src="features/invoices/invoices.js"></script>
+<script src="features/ai-tools/ai-tools.js"></script>
+<script src="features/tara/tara.js"></script>
+<script src="features/orders/orders.js"></script>
+<script src="features/leaderboard/leaderboard.js"></script>
+<script src="features/dispatch/dispatch.js"></script>
+<script src="features/pick-list/pick-list.js"></script>
+<script src="features/inventory/inventory.js"></script>
+<script src="features/labels/labels.js"></script>
+<script src="features/supplies/supplies.js"></script>
+<script src="features/sku-master/sku-master.js"></script>
+<script src="features/inbound/inbound.js"></script>
+<script src="features/shipping/shipping.js"></script>
+<script src="features/edi/edi.js"></script>
+<script src="features/marketplaces/marketplaces.js"></script>
+<script src="features/bol/bol.js"></script>
+<script src="features/cycle-counts/cycle-counts.js"></script>
+<script src="features/reports/reports.js"></script>
+<script src="features/notifications/notifications.js"></script>
+<script src="features/customers/customers.js"></script>
+<script src="features/locations/locations.js"></script>
+<script src="features/pricing/pricing.js"></script>
+<script src="features/owner/owner.js"></script>
 
 </body>
 </html>

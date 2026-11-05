@@ -24,47 +24,20 @@ This is intentional for simplicity and GitHub Pages compatibility.
 
 ## File Structure
 
+One folder per feature. See `AGENTS.md` for the full layout and the rules for
+Claude Code and Codex working side by side, and `WORKBOARD.md` for who is working on what.
+
 ```
-shiplyco-portal/
-├── index.html                  ← App shell (login UI, sidebar nav, modal overlays)
-├── styles/
-│   └── main.css                ← All CSS (brand colors, layout, components)
-├── js/
-│   ├── config.js               ← Supabase keys, pricing rates, nav config, sample data
-│   └── auth.js                 ← Login, logout, session management, password reset
-└── modules/
-    ├── inventory-grid.js       ← Resizable/draggable inventory data grid component
-    ├── users.js                ← User management (invite, edit, roles, password reset)
-    ├── invoices.js             ← Invoice generation and management (Supabase wired)
-    ├── tara.js                 ← TARA AI assistant (particle UI, ElevenLabs voice, Groq chat)
-    ├── receiving.js            ← Two-stage truck receiving (new truck modal, pallet scanning)
-    ├── orders.js               ← Place an order form + orders list (Supabase wired)
-    ├── dispatch.js             ← Dispatch board, my tasks, pick list (employee facing)
-    ├── inventory.js            ← Inventory & scan page with pick sessions
-    ├── label-printer.js        ← Pallet and SKU label printing
-    ├── leaderboard.js          ← Employee performance tracking and leaderboard
-    ├── supplies.js             ← Supplies inventory management
-    ├── sku-catalog.js          ← SKU master catalog, inbound ASN, dispose system
-    ├── shipping.js             ← Shipping rates, carrier accounts, providers
-    ├── edi.js                  ← EDI management (partners, PO inbox, ASN builder)
-    ├── marketplace.js          ← Marketplace integrations (Amazon, Shopify, etc.)
-    ├── bol.js                  ← Bill of Lading creation and management
-    ├── cycle-counts.js         ← Cycle count scheduling and execution
-    ├── reports.js              ← Reporting and analytics dashboard
-    ├── ai-assistant.js         ← AI feature pages (order assistant, pick sequencing, etc.)
-    ├── customers.js            ← Customer manager, pricing editor, contacts
-    └── locations.js            ← Warehouse location manager (zones, aisles, bays)
+index.html          app shell + script tags (order: core, shared, features)
+core/               config.js (Supabase client, rates, nav), auth.js (login, router)
+shared/             inventory-grid.js (table used by several features)
+features/<name>/    <name>.js + README.md, one folder per feature (28 features)
+styles/main.css     shared styles
+supabase/           migrations (RLS security) and edge functions
+tests/              npm test: syntax check + browser smoke test
 ```
 
-## Script Load Order (important)
-
-Scripts must load in this order (already set in index.html):
-1. `js/config.js` — creates the Supabase client (`sb`), global constants (rates, nav items)
-2. `modules/inventory-grid.js` — shared grid component used by other modules
-3. `js/auth.js` — login, session restore, invite and password reset screens
-4. All other modules (order between them is mostly flexible)
-
-## Global Variables (defined in config.js / auth.js)
+## Global Variables (defined in core/config.js / core/auth.js)
 
 ```js
 SUPABASE_URL, SUPABASE_ANON_KEY  // Supabase connection
@@ -87,7 +60,7 @@ CUSTOMERS, ORDERS, INVENTORY      // Data arrays (partially Supabase wired)
 ## Security model (read this)
 
 Customer data is protected by **Row Level Security** in Supabase, defined in
-`supabase/migrations/`. The anon key in `js/config.js` is public by design.
+`supabase/migrations/`. The anon key in `core/config.js` is public by design.
 Admins see everything, employees see warehouse data, customers see only rows whose
 `cust_id` / `customer_id` matches their profile. User invites run server side in
 `supabase/functions/invite-user` (needs the service role key, which never touches the browser).

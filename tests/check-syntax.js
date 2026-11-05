@@ -2,7 +2,7 @@
 // One bad quote anywhere stops the whole portal from loading, so run this on every change.
 const fs = require('fs'), path = require('path');
 const root = path.join(__dirname, '..');
-const files = ['js', 'modules'].flatMap(d => fs.readdirSync(path.join(root, d)).filter(f => f.endsWith('.js')).map(f => path.join(d, f)));
+const files = ['core', 'shared', 'features'].flatMap(d => fs.readdirSync(path.join(root, d), { recursive: true }).filter(f => f.endsWith('.js')).map(f => path.join(d, f)));
 let bad = 0;
 for (const f of files) {
   try { new Function(fs.readFileSync(path.join(root, f), 'utf8')); }
