@@ -35,7 +35,7 @@
       onkeydown="if(event.key==='Enter')doLogin()"/>
     <button class="lg-btn" id="lgBtn" onclick="doLogin()">Sign In</button>
     <div class="lg-err" id="lgErr"></div>
-    <a class="lg-forgot" href="#" onclick="doForgotPassword(event)">Forgot password?</a>
+    <a class="lg-forgot" href="#" onclick="event.preventDefault();doForgotPassword()">Forgot password?</a>
   </div>
 </div>
 
@@ -165,8 +165,8 @@
 
 <!-- ── LOAD ALL MODULES ── -->
 <!-- Core -->
-<script src="modules/inventory-grid.js"></script>
 <script src="js/config.js"></script>
+<script src="modules/inventory-grid.js"></script>
 <script src="js/auth.js"></script>
 
 <!-- Feature Modules -->

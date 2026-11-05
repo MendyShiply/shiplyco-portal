@@ -1,3 +1,15 @@
+// ── SUPABASE CONNECTION ──
+// The anon key is public by design. Data is protected by Row Level Security
+// policies in supabase/migrations, not by keeping this key secret.
+const SUPABASE_URL='https://xyemghdkehsfgeyidmie.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5ZW1naGRrZWhzZmdleWlkbWllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NjE3NTIsImV4cCI6MjA4ODMzNzc1Mn0.4pIvrbdbMrPIrByY9GRnDiyw15BJobPxllr8mQ0c1OA';
+
+// Read the auth link type ("invite" / "recovery") before supabase-js consumes
+// and clears the URL hash, so auth.js can show the set-password screen.
+const AUTH_LINK_TYPE = new URLSearchParams(location.hash.slice(1)).get('type');
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const OWNER_CUST_ID = 'shiplyco_owner';
 
 // ── RATES (from your price sheet) ──

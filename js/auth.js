@@ -23,9 +23,9 @@ async function doLogin(){
   // Fetch profile to get role
   const {data:profile} = await sb.from('profiles').select('*').eq('id',data.user.id).single();
 
-  if(!profile){
+  if(!profile || profile.active===false){
     btn.textContent='SIGN IN';btn.disabled=false;
-    showLgErr('Account not set up yet. Contact your administrator.');
+    showLgErr(profile ? 'This account has been deactivated. Contact ShiplyCo.' : 'Account not set up yet. Contact your administrator.');
     await sb.auth.signOut();
     return;
   }
@@ -42,7 +42,7 @@ function showLgErr(msg){
 async function doForgotPassword(){
   const email=document.getElementById('lgEmail')?.value?.trim();
   if(!email){showLgErr('Enter your email address above first.');return;}
-  const {error}=await sb.auth.resetPasswordForEmail(email);
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
   if(error){showLgErr(error.message);return;}
   showLgErr('✓ Password reset email sent — check your inbox.');
   document.getElementById('lgErr').style.background='rgba(30,122,79,0.15)';
@@ -80,44 +80,55 @@ async function doLogout(){
   if(err){err.style.display='none';}
 }
 
-// ── Handle password reset from email link ──
-sb.auth.onAuthStateChange((event, session) => {
-  if(event === 'PASSWORD_RECOVERY'){
-    const loginScreen = document.getElementById('loginScreen');
-    const app = document.getElementById('app');
-    if(loginScreen) loginScreen.style.display='flex';
-    if(app) app.style.display='none';
-    const box = document.querySelector('.lg-card');
-    if(box){
-      box.innerHTML = '<div style="text-align:center;margin-bottom:20px"><div style="font-size:22px;font-weight:800">Set Your Password</div><div style="font-size:13px;color:#666;margin-top:4px">Choose a password for your ShiplyCo account</div></div>'
-        +'<div style="margin-bottom:10px"><label style="font-size:12px;font-weight:700">New Password</label><input type="password" id="newPwInput" placeholder="At least 8 characters" style="width:100%;padding:11px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-top:4px;box-sizing:border-box"/></div>'
-        +'<div style="margin-bottom:14px"><label style="font-size:12px;font-weight:700">Confirm Password</label><input type="password" id="newPwConfirm" placeholder="Same password again" style="width:100%;padding:11px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-top:4px;box-sizing:border-box"/></div>'
-        +'<div id="setPwErr" style="display:none;color:red;font-size:13px;margin-bottom:10px"></div>'
-        +'<button onclick="setNewPassword()" style="width:100%;padding:13px;background:#e8241a;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer">Set Password and Sign In</button>';
-    }
-  }
+// ── Invite / password reset links ──
+// Both email links land here with a temporary session. Instead of logging the
+// person straight in, ask them to choose a password first.
+const NEEDS_NEW_PASSWORD = AUTH_LINK_TYPE==='invite' || AUTH_LINK_TYPE==='recovery';
+
+function showSetPasswordScreen(){
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  const box=document.querySelector('.lg-box');
+  if(!box) return;
+  const title = AUTH_LINK_TYPE==='invite' ? 'Welcome to ShiplyCo' : 'Reset your password';
+  box.innerHTML = `
+    <div class="lg-name" style="font-size:28px;margin-bottom:6px">${title}</div>
+    <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:18px">Choose a password for your account (at least 8 characters).</div>
+    <input class="lg-input" id="newPwInput" type="password" placeholder="New password" autocomplete="new-password"/>
+    <input class="lg-input" id="newPwConfirm" type="password" placeholder="Confirm password" autocomplete="new-password"/>
+    <button class="lg-btn" id="setPwBtn">Set password and sign in</button>
+    <div class="lg-err" id="setPwErr"></div>`;
+  document.getElementById('setPwBtn').addEventListener('click', setNewPassword);
+  document.getElementById('newPwConfirm').addEventListener('keydown', e=>{ if(e.key==='Enter') setNewPassword(); });
+}
+
+sb.auth.onAuthStateChange(event => {
+  if(event==='PASSWORD_RECOVERY') showSetPasswordScreen();
 });
 
 async function setNewPassword(){
-  const pw = document.getElementById('newPwInput')?.value;
-  const pw2 = document.getElementById('newPwConfirm')?.value;
+  const pw  = document.getElementById('newPwInput')?.value||'';
+  const pw2 = document.getElementById('newPwConfirm')?.value||'';
   const err = document.getElementById('setPwErr');
-  if(!pw||pw.length<8){if(err){err.textContent='At least 8 characters required';err.style.display='block';}return;}
-  if(pw!==pw2){if(err){err.textContent='Passwords do not match';err.style.display='block';}return;}
-  if(err) err.style.display='none';
+  const btn = document.getElementById('setPwBtn');
+  const fail = msg => { err.textContent=msg; err.style.display='block'; btn.disabled=false; btn.textContent='Set password and sign in'; };
+  if(pw.length<8) return fail('Use at least 8 characters.');
+  if(pw!==pw2) return fail('Passwords do not match.');
+  err.style.display='none'; btn.disabled=true; btn.textContent='Saving…';
   const {error} = await sb.auth.updateUser({password:pw});
-  if(error){if(err){err.textContent=error.message;err.style.display='block';}return;}
-  alert('Password set! You will now be signed in.');
-  window.location.reload();
+  if(error) return fail(error.message);
+  // Drop the token hash from the URL, then reload into the normal signed in flow.
+  history.replaceState(null,'',location.pathname);
+  location.reload();
 }
 
-// ── Check if already logged in on page load ──
-sb.auth.getSession().then(({data:{session}})=>{
-  if(session){
-    sb.from('profiles').select('*').eq('id',session.user.id).single().then(({data:profile})=>{
-      if(profile) launchApp(profile);
-    });
-  }
+// ── Restore an existing session on page load ──
+sb.auth.getSession().then(async ({data:{session}})=>{
+  if(!session) return;
+  if(NEEDS_NEW_PASSWORD){ showSetPasswordScreen(); return; }
+  const {data:profile} = await sb.from('profiles').select('*').eq('id',session.user.id).single();
+  if(profile && profile.active!==false) launchApp(profile);
+  else await sb.auth.signOut();
 });
 
 

@@ -1,0 +1,13 @@
+{
+  "name": "shiplyco-portal",
+  "private": true,
+  "description": "ShiplyCo client and admin portal (static site on GitHub Pages, Supabase backend)",
+  "scripts": {
+    "test": "node tests/check-syntax.js && node tests/smoke.js",
+    "test:syntax": "node tests/check-syntax.js"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "playwright": "1.63.0"
+  }
+}

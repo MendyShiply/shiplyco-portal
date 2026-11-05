@@ -490,6 +490,3 @@ document.addEventListener('click',e=>{
   }
 });
 
-const SUPABASE_URL='https://xyemghdkehsfgeyidmie.supabase.co';
-const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5ZW1naGRrZWhzZmdleWlkbWllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NjE3NTIsImV4cCI6MjA4ODMzNzc1Mn0.4pIvrbdbMrPIrByY9GRnDiyw15BJobPxllr8mQ0c1OA';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);

@@ -243,49 +243,26 @@ async function sendInvite(){
   errEl.style.display='none'; okEl.style.display='none';
   if(!email){errEl.textContent='Email is required.';errEl.style.display='block';return;}
 
+  if(role==='customer' && !custId){errEl.textContent='Pick which customer this user belongs to.';errEl.style.display='block';return;}
+
   btn.textContent='Sending…'; btn.disabled=true;
 
-  // Create user in Supabase Auth
-  const {data, error} = await sb.auth.admin?.inviteUserByEmail
-    ? await sb.auth.admin.inviteUserByEmail(email)
-    : {data:null, error:{message:'Admin API not available from client — use Supabase dashboard to invite'}};
+  // Runs server side (supabase/functions/invite-user): checks the caller is an
+  // admin, sends the invite email and creates the profile.
+  const {data, error} = await sb.functions.invoke('invite-user', {
+    body:{email, full_name:name, role, customer_id: role==='customer'?custId:null}
+  });
+  btn.textContent='Send Invite →'; btn.disabled=false;
 
-  // Fallback: create profile record and let them use password reset to set password
-  if(error){
-    // Try creating via signUp with a temp password and immediately send reset
-    const tempPass = Math.random().toString(36).slice(2,10)+'A1!';
-    const {data:signUpData, error:signUpErr} = await sb.auth.signUp({email, password:tempPass, options:{data:{full_name:name}}});
-
-    if(signUpErr){
-      btn.textContent='Send Invite →'; btn.disabled=false;
-      errEl.textContent=signUpErr.message; errEl.style.display='block';
-      return;
-    }
-
-    // Insert profile
-    if(signUpData?.user){
-      await sb.from('profiles').insert({
-        id: signUpData.user.id,
-        email, full_name:name, role,
-        customer_id: role==='customer'?custId:null,
-        active:true, invited_at: new Date().toISOString()
-      });
-
-      // Send password reset so they can set their own password
-      await sb.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://mendyshiply.github.io/shiplyco-portal'
-      });
-    }
-
-    btn.textContent='Send Invite →'; btn.disabled=false;
-    okEl.textContent=`✓ Invite sent to ${email} — they'll receive an email to set their password.`;
-    okEl.style.display='block';
-    setTimeout(()=>{ document.getElementById('inviteUserModal').style.display='none'; pgAdminLoad(); }, 2500);
+  if(error || !data?.ok){
+    let msg = data?.error;
+    if(!msg && error?.context?.json){ try{ msg=(await error.context.json()).error; }catch(_){} }
+    errEl.textContent = msg || error?.message || 'Could not send the invite.';
+    errEl.style.display='block';
     return;
   }
 
-  btn.textContent='Send Invite →'; btn.disabled=false;
-  okEl.textContent=`✓ Invite sent to ${email}`;
+  okEl.textContent=`✓ Invite sent to ${email}. They'll get an email to set their password.`;
   okEl.style.display='block';
   setTimeout(()=>{ document.getElementById('inviteUserModal').style.display='none'; pgAdminLoad(); }, 2500);
 }
